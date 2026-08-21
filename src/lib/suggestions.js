@@ -1,12 +1,14 @@
 // Envia pelo Netlify Forms (form estático "sugestoes" declarado em index.html) —
 // o Netlify intercepta esse POST no servidor e dispara a notificação por e-mail
 // configurada em Site configuration > Forms > Form notifications.
-export async function submitSuggestion({ name, email, message }) {
+export async function submitSuggestion({ type, name, email, message, preferredDate }) {
   const body = new URLSearchParams({
     'form-name': 'sugestoes',
+    tipo: type,
     nome: name || '',
     email: email || '',
     mensagem: message,
+    data_preferida: preferredDate || '',
     empresa: '',
   })
   const res = await fetch('/', {

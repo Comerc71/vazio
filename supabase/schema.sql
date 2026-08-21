@@ -13,6 +13,7 @@ create table public.profiles (
   hectares numeric,
   phone text,
   activity text,
+  avatar_url text,
   created_at timestamptz not null default now()
 );
 
@@ -152,3 +153,19 @@ create policy "alerts: dono cria seus alertas"
 -- entre abas/dispositivos assim que uma linha muda
 -- ---------------------------------------------------------
 alter publication supabase_realtime add table public.devices;
+
+-- ---------------------------------------------------------
+-- Fotos de perfil (bucket público de leitura; escrita só do dono)
+-- ---------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+create policy "avatars: leitura pública"
+  on storage.objects for select
+  using (bucket_id = 'avatars');
+
+create policy "avatars: dono gerencia seu arquivo"
+  on storage.objects for all
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);

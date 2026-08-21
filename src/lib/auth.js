@@ -39,7 +39,7 @@ export async function resendConfirmation(email) {
 export async function fetchProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('name, farm_name, city, hectares, phone, activity')
+    .select('name, farm_name, city, hectares, phone, activity, avatar_url')
     .eq('id', userId)
     .single()
   if (error) throw error
@@ -49,6 +49,19 @@ export async function fetchProfile(userId) {
 export async function updateProfile(userId, patch) {
   const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
   if (error) throw error
+}
+
+export async function uploadAvatar(userId, file) {
+  const ext = file.name.split('.').pop()
+  const path = `${userId}/avatar.${ext}`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, cacheControl: '3600' })
+  if (uploadError) throw uploadError
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const avatarUrl = `${data.publicUrl}?v=${Date.now()}`
+  await updateProfile(userId, { avatar_url: avatarUrl })
+  return avatarUrl
 }
 
 const ERROR_MESSAGES = [

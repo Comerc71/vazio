@@ -8,9 +8,10 @@ import {
   Sun, X, Map as MapIcon, Plus, LocateFixed, Loader2, CloudSun, Navigation,
   User, Building2, Mail, Lock, Eye, EyeOff, Phone, Ruler, Sprout,
   CheckSquare, Square, LogOut, ArrowRight, ArrowLeft, ShieldCheck, RefreshCw, Trash2, Lightbulb,
+  HelpCircle, Calendar, Camera,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient";
-import { signUp, signIn, signOut, resendConfirmation, fetchProfile, updateProfile, authErrorMessage } from "./lib/auth";
+import { signUp, signIn, signOut, resendConfirmation, fetchProfile, updateProfile, uploadAvatar, authErrorMessage } from "./lib/auth";
 import { listDevices, insertDevice, updateDevice, deleteDevice, subscribeToDevices } from "./lib/devices";
 import { watchBestPosition } from "./lib/geolocation";
 import { submitSuggestion } from "./lib/suggestions";
@@ -52,37 +53,15 @@ const DEVICE_TYPES = [
   { id: "outro", label: "Outro sensor RF", icon: RadioTower },
 ];
 
+const CONTACT_TYPES = [
+  { id: "sugestao", label: "Sugestão", icon: Lightbulb },
+  { id: "duvida", label: "Dúvida", icon: HelpCircle },
+  { id: "visita", label: "Visita técnica", icon: Calendar },
+];
+
 function iconForType(type) {
   return DEVICE_TYPES.find((t) => t.id === type)?.icon || RadioTower;
 }
-
-/* ---------------------------------------------------------
-   Dados mock — simula o que viria do gateway via RF.
-   Coordenadas reais (lat/lon) em torno de Paragominas, PA.
---------------------------------------------------------- */
-const GATEWAY_POINT = {
-  id: "gateway",
-  name: "Gateway central",
-  location: "Alcance até 15 km",
-  lat: -2.9970,
-  lon: -47.4930,
-};
-
-const VALVE_POINT = {
-  id: "valvula4",
-  name: "Irrigação — Talhão 4",
-  location: "Válvula principal",
-  icon: Droplets,
-  status: "ok",
-  signal: 4,
-  lat: -2.9999, lon: -47.4967,
-};
-
-const ALERTS = [
-  { id: 2, title: "Sinal RF fraco", place: "Bomba do poço · Poço 2", time: "há 3 h", level: "info" },
-  { id: 3, title: "Cerca elétrica normalizada", place: "Perímetro norte", time: "ontem, 18:42", level: "ok" },
-  { id: 4, title: "Silo de ração reabastecido", place: "Galpão 2", time: "ontem, 07:10", level: "ok" },
-];
 
 /* ---------------------------------------------------------
    Cadastro de usuário
@@ -109,20 +88,6 @@ function initialsFor(text) {
   const parts = text.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-/* ---------------------------------------------------------
-   Geo helpers
---------------------------------------------------------- */
-function haversineKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const toRad = (d) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function fitMapToPoints(map, points) {
@@ -269,7 +234,7 @@ function PainelScreen({ devices, user }) {
 }
 
 function AlertasScreen() {
-  const [alerts, setAlerts] = useState(ALERTS);
+  const [alerts, setAlerts] = useState([]);
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   useEffect(() => {
@@ -321,9 +286,27 @@ function AlertasScreen() {
   );
 }
 
-function AjustesScreen({ devices, user, onLogout, onUpdateProfile }) {
+function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvatar }) {
   const [editingDevice, setEditingDevice] = useState(null);
   const [editingFarm, setEditingFarm] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState(null);
+  const avatarInputRef = useRef(null);
+
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAvatarError(null);
+    setUploadingAvatar(true);
+    try {
+      await onUploadAvatar(file);
+    } catch {
+      setAvatarError("Não foi possível enviar a foto. Tente uma imagem menor.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   return (
     <div className="yc-card-list">
@@ -347,14 +330,35 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile }) {
 
       <div className="yc-section-label" style={{ marginTop: 18 }}>Conta</div>
       <div className="yc-card yc-alert-item">
-        <div className="yc-card-icon" style={{ background: `${COLORS.gold}22`, color: COLORS.goldDim }}>
-          <User size={17} strokeWidth={1.8} />
-        </div>
+        <button
+          type="button"
+          className="yc-avatar-btn"
+          onClick={() => avatarInputRef.current?.click()}
+          disabled={uploadingAvatar}
+          aria-label="Alterar foto de perfil"
+        >
+          {uploadingAvatar ? (
+            <Loader2 size={16} className="yc-spin" color={COLORS.goldDim} />
+          ) : user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" />
+          ) : (
+            <User size={17} strokeWidth={1.8} color={COLORS.goldDim} />
+          )}
+          <span className="yc-avatar-badge"><Camera size={10} strokeWidth={2.4} /></span>
+        </button>
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={handleAvatarChange}
+        />
         <div className="yc-card-info">
           <span className="yc-card-title" style={{ display: "block" }}>{user?.name || "—"}</span>
           <span className="yc-card-loc">{user?.email}</span>
         </div>
       </div>
+      {avatarError && <p className="yc-field-hint" style={{ color: COLORS.alert }}>{avatarError}</p>}
       <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setEditingFarm(true)}>
         <div className="yc-card-icon" style={{ background: `${COLORS.forest}1A`, color: COLORS.forest }}>
           <Building2 size={17} strokeWidth={1.8} />
@@ -398,14 +402,17 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile }) {
 }
 
 function SugestoesScreen({ user }) {
+  const [type, setType] = useState("sugestao");
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [message, setMessage] = useState("");
+  const [preferredDate, setPreferredDate] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(null);
 
-  const canSend = message.trim().length > 4;
+  const isVisita = type === "visita";
+  const canSend = message.trim().length > 4 && (!isVisita || preferredDate);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -413,9 +420,16 @@ function SugestoesScreen({ user }) {
     setError(null);
     setSending(true);
     try {
-      await submitSuggestion({ name, email, message: message.trim() });
+      await submitSuggestion({
+        type: CONTACT_TYPES.find((t) => t.id === type).label,
+        name,
+        email,
+        message: message.trim(),
+        preferredDate: isVisita ? preferredDate : "",
+      });
       setSent(true);
       setMessage("");
+      setPreferredDate("");
     } catch {
       setError("Não foi possível enviar agora. Tente de novo em instantes.");
     } finally {
@@ -428,28 +442,56 @@ function SugestoesScreen({ user }) {
       <div className="yc-auth-body" style={{ alignItems: "center" }}>
         <div className="yc-verify-icon"><Lightbulb size={22} color={COLORS.gold} /></div>
         <p className="yc-auth-lead" style={{ textAlign: "center" }}>
-          Sugestão enviada, obrigado! Vamos avaliar com carinho.
+          {isVisita ? "Pedido de visita enviado! Vamos confirmar a data com você." : "Mensagem enviada, obrigado!"}
         </p>
-        <button type="button" className="yc-linklike" onClick={() => setSent(false)}>Enviar outra sugestão</button>
+        <button type="button" className="yc-linklike" onClick={() => setSent(false)}>Enviar outra mensagem</button>
       </div>
     );
   }
 
+  const messageLabel = type === "duvida" ? "Sua dúvida" : type === "visita" ? "O que precisa de suporte" : "Sua sugestão";
+  const messagePlaceholder = type === "duvida" ? "Escreva sua dúvida..." : type === "visita" ? "Conte o que precisa verificar na visita..." : "Conte sua ideia...";
+
   return (
     <form className="yc-auth-body" onSubmit={handleSubmit}>
-      <p className="yc-auth-lead">Tem alguma ideia pra melhorar o app? Manda pra gente — a mensagem chega direto pra equipe.</p>
+      <p className="yc-auth-lead">Fale com a gente — sugestões, dúvidas ou agendamento de visita técnica chegam direto pra equipe.</p>
 
-      <label className="yc-field-label">Seu nome (opcional)</label>
+      <div className="yc-type-grid">
+        {CONTACT_TYPES.map((t) => {
+          const TIcon = t.icon;
+          const active = type === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              className={`yc-type-btn ${active ? "active" : ""}`}
+              onClick={() => setType(t.id)}
+            >
+              <TIcon size={16} strokeWidth={1.9} />
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <label className="yc-field-label" style={{ marginTop: 12 }}>Seu nome (opcional)</label>
       <FieldInput icon={User} placeholder="Como podemos te chamar" value={name} onChange={(e) => setName(e.target.value)} />
 
       <label className="yc-field-label" style={{ marginTop: 12 }}>Seu e-mail (opcional, pra responder)</label>
       <FieldInput icon={Mail} type="email" placeholder="voce@fazenda.com.br" value={email} onChange={(e) => setEmail(e.target.value)} />
 
-      <label className="yc-field-label" style={{ marginTop: 12 }}>Sugestão</label>
+      {isVisita && (
+        <>
+          <label className="yc-field-label" style={{ marginTop: 12 }}>Data preferida</label>
+          <FieldInput icon={Calendar} type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
+        </>
+      )}
+
+      <label className="yc-field-label" style={{ marginTop: 12 }}>{messageLabel}</label>
       <textarea
         className="yc-input"
         style={{ minHeight: 110, resize: "vertical" }}
-        placeholder="Conte sua ideia..."
+        placeholder={messagePlaceholder}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
@@ -457,7 +499,7 @@ function SugestoesScreen({ user }) {
       {error && <p className="yc-field-hint" style={{ color: COLORS.alert }}>{error}</p>}
 
       <button className="yc-save-btn" type="submit" disabled={!canSend || sending} style={{ marginTop: 16 }}>
-        {sending ? <Loader2 size={16} className="yc-spin" /> : <>Enviar sugestão <ArrowRight size={15} /></>}
+        {sending ? <Loader2 size={16} className="yc-spin" /> : <>Enviar <ArrowRight size={15} /></>}
       </button>
     </form>
   );
@@ -467,28 +509,24 @@ function SugestoesScreen({ user }) {
    Pino de mapa
 --------------------------------------------------------- */
 function buildPinIcon({ point, selected, kind }) {
-  const isGateway = kind === "gateway";
   const isMe = kind === "me";
-  const color = isGateway
-    ? COLORS.gold
-    : isMe
+  const color = isMe
     ? COLORS.forestBright
     : point.status === "atencao"
     ? COLORS.goldDim
     : COLORS.forestMid;
-  const Icon = isMe ? Navigation : isGateway ? RadioTower : point.icon || RadioTower;
-  const size = isGateway || isMe ? 28 : 26;
+  const Icon = isMe ? Navigation : point.icon || RadioTower;
+  const size = isMe ? 28 : 26;
   const iconMarkup = renderToStaticMarkup(
-    <Icon size={13} color={isMe ? "#fff" : isGateway ? COLORS.gold : color} strokeWidth={2.2} />
+    <Icon size={13} color={isMe ? "#fff" : color} strokeWidth={2.2} />
   );
-  const pulseColor = isMe ? COLORS.forestBright : COLORS.gold;
 
   const html = `
     <span style="position:relative;display:inline-block;">
-      <span class="yc-map-pin-dot ${selected ? "sel" : ""}" style="background:${isGateway ? COLORS.forestDeep : isMe ? COLORS.forestBright : "#fff"};border:2px solid ${isMe ? "#fff" : color};width:${size}px;height:${size}px;">
+      <span class="yc-map-pin-dot ${selected ? "sel" : ""}" style="background:${isMe ? COLORS.forestBright : "#fff"};border:2px solid ${isMe ? "#fff" : color};width:${size}px;height:${size}px;">
         ${iconMarkup}
       </span>
-      ${isGateway || isMe ? `<span class="yc-map-pin-pulse" style="border-color:${pulseColor};"></span>` : ""}
+      ${isMe ? `<span class="yc-map-pin-pulse" style="border-color:${COLORS.forestBright};"></span>` : ""}
     </span>
   `;
 
@@ -1130,33 +1168,22 @@ function MapaScreen({ devices, onAddDevice }) {
   }, [requestLocation]);
 
   const allPoints = useMemo(() => {
-    const pts = [GATEWAY_POINT, VALVE_POINT, ...devices];
-    return myLocation ? [...pts, { lat: myLocation.lat, lon: myLocation.lon }] : pts;
+    return myLocation ? [...devices, { lat: myLocation.lat, lon: myLocation.lon }] : devices;
   }, [devices, myLocation]);
 
   const active =
-    selected === "gateway" ? GATEWAY_POINT :
     selected === "me" ? { name: "Você está aqui", location: myLocation ? `precisão ~${Math.round(myLocation.accuracy)} m` : "" } :
-    [...devices, VALVE_POINT].find((p) => p.id === selected);
-
-  const distanceToFarm = myLocation ? haversineKm(myLocation.lat, myLocation.lon, GATEWAY_POINT.lat, GATEWAY_POINT.lon) : null;
+    devices.find((p) => p.id === selected);
 
   return (
     <div className="yc-map-wrap">
       <div className="yc-section-label">Mapa da propriedade</div>
 
-      {distanceToFarm !== null && (
-        <div className="yc-distance-pill">
-          <Navigation size={12} />
-          Você está a {distanceToFarm < 1 ? `${Math.round(distanceToFarm * 1000)} m` : `${distanceToFarm.toFixed(1)} km`} do gateway central
-        </div>
-      )}
-
       <div className="yc-map">
         <MapContainer
           className="yc-map-leaflet"
-          center={[GATEWAY_POINT.lat, GATEWAY_POINT.lon]}
-          zoom={14}
+          center={[-14.235, -51.9253]}
+          zoom={4}
           zoomControl={false}
         >
           <TileLayer
@@ -1169,8 +1196,6 @@ function MapaScreen({ devices, onAddDevice }) {
           {devices.map((d) => (
             <MapPinMarker key={d.id} point={d} selected={selected === d.id} onClick={() => setSelected(selected === d.id ? null : d.id)} />
           ))}
-          <MapPinMarker point={VALVE_POINT} selected={selected === VALVE_POINT.id} onClick={() => setSelected(selected === VALVE_POINT.id ? null : VALVE_POINT.id)} />
-          <MapPinMarker point={GATEWAY_POINT} kind="gateway" selected={selected === "gateway"} onClick={() => setSelected(selected === "gateway" ? null : "gateway")} />
           {myLocation && (
             <MapPinMarker point={myLocation} kind="me" selected={selected === "me"} onClick={() => setSelected(selected === "me" ? null : "me")} />
           )}
@@ -1189,6 +1214,9 @@ function MapaScreen({ devices, onAddDevice }) {
         </button>
       </div>
 
+      {devices.length === 0 && (
+        <p className="yc-map-hint">Nenhum sensor cadastrado ainda — toque em "+" pra adicionar um.</p>
+      )}
       {locStatus === "loading" && (
         <p className="yc-map-hint"><Loader2 size={12} className="yc-spin" style={{ marginRight: 5, verticalAlign: -2 }} />Melhorando a precisão do GPS…</p>
       )}
@@ -1207,7 +1235,6 @@ function MapaScreen({ devices, onAddDevice }) {
       <div className="yc-map-legend">
         <span><i style={{ background: COLORS.forestMid }} />Normal</span>
         <span><i style={{ background: COLORS.goldDim }} />Atenção</span>
-        <span><i style={{ background: COLORS.gold, border: `1px solid ${COLORS.forestDeep}` }} />Gateway</span>
         <span><i style={{ background: COLORS.forestBright, border: "1px solid #fff" }} />Você</span>
       </div>
 
@@ -1320,6 +1347,7 @@ export default function YassenaCampoApp() {
         city: profile?.city || "",
         hectares: profile?.hectares || "",
         activity: profile?.activity || "",
+        avatarUrl: profile?.avatar_url || null,
       }
     : null;
 
@@ -1329,6 +1357,10 @@ export default function YassenaCampoApp() {
   const handleUpdateProfile = async ({ farmName, hectares }) => {
     await updateProfile(session.user.id, { farm_name: farmName, hectares: hectares || null });
     setProfile((p) => ({ ...p, farm_name: farmName, hectares: hectares || null }));
+  };
+  const handleUploadAvatar = async (file) => {
+    const avatarUrl = await uploadAvatar(session.user.id, file);
+    setProfile((p) => ({ ...p, avatar_url: avatarUrl }));
   };
 
   const TABS = [
@@ -1378,7 +1410,9 @@ export default function YassenaCampoApp() {
           width:38px; height:38px; border-radius:10px; background:${COLORS.forestDeep};
           display:flex; align-items:center; justify-content:center; color:${COLORS.gold};
           font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px;
+          overflow:hidden; flex-shrink:0;
         }
+        .yc-header-badge img{ width:100%; height:100%; object-fit:cover; }
         .yc-screen{
           height: 560px; overflow-y:auto; padding: 4px 16px 90px;
           scrollbar-width: none; position:relative;
@@ -1402,6 +1436,17 @@ export default function YassenaCampoApp() {
         }
         .yc-card-icon{
           width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .yc-avatar-btn{
+          position:relative; width:36px; height:36px; border-radius:999px; flex-shrink:0;
+          background:${COLORS.gold}22; border:none; cursor:pointer; overflow:visible;
+          display:flex; align-items:center; justify-content:center;
+        }
+        .yc-avatar-btn img{ width:100%; height:100%; border-radius:999px; object-fit:cover; }
+        .yc-avatar-badge{
+          position:absolute; right:-2px; bottom:-2px; width:16px; height:16px; border-radius:999px;
+          background:${COLORS.forestDeep}; color:${COLORS.gold}; border:2px solid ${COLORS.paper};
+          display:flex; align-items:center; justify-content:center;
         }
         .yc-card-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
         .yc-card-title-row{ display:flex; align-items:center; gap:6px; }
@@ -1442,12 +1487,6 @@ export default function YassenaCampoApp() {
 
         /* ===== Mapa ===== */
         .yc-map-wrap{ display:flex; flex-direction:column; }
-        .yc-distance-pill{
-          display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
-          background:${COLORS.forest}14; color:${COLORS.forest}; border:1px solid ${COLORS.forest}30;
-          font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600;
-          padding:5px 10px; border-radius:999px; margin-bottom:10px;
-        }
         .yc-map{
           position:relative; width:100%; aspect-ratio: 1 / 1.08;
           border-radius:16px; overflow:hidden; border:1px solid rgba(20,33,20,0.14);
@@ -1562,12 +1601,21 @@ export default function YassenaCampoApp() {
 
         /* ===== Autenticação ===== */
         .yc-auth-header{
-          text-align:center; padding: 10px 24px 18px;
+          text-align:center; padding: 30px 24px 26px;
+          background: radial-gradient(ellipse 140% 100% at 50% 0%, ${COLORS.forest} 0%, ${COLORS.forestDeep} 100%);
+          border-radius: 0 0 26px 26px;
         }
         .yc-auth-logo{
-          width:44px; height:44px; border-radius:12px; background:${COLORS.forestDeep};
-          display:flex; align-items:center; justify-content:center; margin:0 auto 10px;
+          width:72px; height:72px; border-radius:18px; overflow:hidden;
+          margin:0 auto 14px; box-shadow:0 12px 26px -8px rgba(0,0,0,0.55);
         }
+        .yc-auth-logo img{ width:100%; height:100%; object-fit:cover; display:block; }
+        .yc-auth-hero-sub{
+          font-size:12px; color:rgba(246,243,234,0.72); margin-top:8px; line-height:1.5;
+          max-width:260px; margin-left:auto; margin-right:auto;
+        }
+        .yc-auth-header .yc-header-eyebrow{ color:${COLORS.gold}; }
+        .yc-auth-header .yc-header-title{ color:#fff; }
         .yc-auth-body{ display:flex; flex-direction:column; padding-bottom:20px; }
         .yc-auth-lead{ font-size:12.5px; color:${COLORS.inkSoft}; margin-bottom:16px; line-height:1.5; }
         .yc-auth-row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -1636,12 +1684,17 @@ export default function YassenaCampoApp() {
           <>
             <div className="yc-auth-header">
               <div className="yc-auth-logo">
-                <RadioTower size={20} color={COLORS.gold} strokeWidth={2} />
+                <img src="/logo.png" alt="Yassena" />
               </div>
               <div className="yc-header-eyebrow" style={{ justifyContent: "center" }}><ShieldCheck size={11} />Acesso seguro</div>
               <div className="yc-header-title" style={{ fontSize: 21 }}>
                 {authScreen === "login" ? "Bem-vindo de volta" : authScreen === "verify" ? "Confirme seu e-mail" : "Criar conta Yassena"}
               </div>
+              {authScreen !== "verify" && (
+                <p className="yc-auth-hero-sub">
+                  Monitore sensores, controle sua fazenda remotamente e acompanhe tudo em tempo real, de onde você estiver.
+                </p>
+              )}
             </div>
             <div className="yc-screen" style={{ height: 560 }}>
               {authScreen === "login" && (
@@ -1666,7 +1719,9 @@ export default function YassenaCampoApp() {
                 <div className="yc-header-eyebrow"><RadioTower size={11} />Yassena Campo</div>
                 <div className="yc-header-title">{user.farmName || "Minha Fazenda"}</div>
               </div>
-              <div className="yc-header-badge">{initialsFor(user.farmName || user.name)}</div>
+              <div className="yc-header-badge">
+                {user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initialsFor(user.farmName || user.name)}
+              </div>
             </div>
 
             <div className="yc-screen">
@@ -1675,7 +1730,13 @@ export default function YassenaCampoApp() {
               {tab === "alertas" && <AlertasScreen />}
               {tab === "sugestoes" && <SugestoesScreen user={user} />}
               {tab === "ajustes" && (
-                <AjustesScreen devices={devices} user={user} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
+                <AjustesScreen
+                  devices={devices}
+                  user={user}
+                  onLogout={handleLogout}
+                  onUpdateProfile={handleUpdateProfile}
+                  onUploadAvatar={handleUploadAvatar}
+                />
               )}
             </div>
 

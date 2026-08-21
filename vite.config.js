@@ -10,7 +10,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       pwaAssets: {
         preset: 'minimal-2023',
-        image: 'public/icon.svg',
+        image: 'public/logo.png',
       },
       manifest: {
         id: '/',
