@@ -79,10 +79,6 @@ function greetingForHour() {
   return "Boa noite";
 }
 
-function formatClock(date) {
-  return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-}
-
 function initialsFor(text) {
   if (!text) return "YC";
   const parts = text.trim().split(/\s+/).filter(Boolean);
@@ -1279,12 +1275,6 @@ function MapaScreen({ devices, onAddDevice }) {
 --------------------------------------------------------- */
 export default function YassenaCampoApp() {
   const [tab, setTab] = useState("painel");
-  const [time, setTime] = useState(() => formatClock(new Date()));
-
-  useEffect(() => {
-    const t = setInterval(() => setTime(formatClock(new Date())), 15000);
-    return () => clearInterval(t);
-  }, []);
   const [devices, setDevices] = useState([]);
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -1376,28 +1366,22 @@ export default function YassenaCampoApp() {
       <style>{`
         ${FONTS}
         .yc-wrap{
-          display:flex; align-items:center; justify-content:center;
-          min-height: 100%; padding: 24px 12px;
-          background: radial-gradient(ellipse 120% 100% at 50% 0%, #EFE9DA 0%, #E4DCC7 100%);
+          display:flex; justify-content:center;
+          min-height: 100vh; min-height: 100dvh;
+          background: ${COLORS.paper};
           font-family: 'IBM Plex Sans', sans-serif;
         }
         .yc-phone{
-          width: 360px; max-width: 100%;
+          width: 100%; max-width: 480px;
+          min-height: 100vh; min-height: 100dvh;
           background: ${COLORS.paper};
-          border-radius: 34px;
-          border: 10px solid ${COLORS.forestDeep};
-          box-shadow: 0 30px 60px -20px rgba(11,42,17,0.45), 0 0 0 1px rgba(11,42,17,0.06);
-          overflow: hidden;
+          display:flex; flex-direction:column;
           position: relative;
+          box-shadow: 0 0 40px rgba(11,42,17,0.08);
         }
-        .yc-statusbar{
-          display:flex; align-items:center; justify-content:space-between;
-          padding: 10px 20px 2px; font-family:'IBM Plex Mono',monospace; font-size:12px;
-          color:${COLORS.ink}; font-weight:500;
-        }
-        .yc-statusbar .yc-dots{ display:flex; gap:3px; align-items:center; }
         .yc-header{
-          padding: 6px 20px 16px; display:flex; align-items:center; justify-content:space-between;
+          padding: calc(14px + env(safe-area-inset-top)) 20px 16px;
+          display:flex; align-items:center; justify-content:space-between;
         }
         .yc-header-eyebrow{
           font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase;
@@ -1414,7 +1398,7 @@ export default function YassenaCampoApp() {
         }
         .yc-header-badge img{ width:100%; height:100%; object-fit:cover; }
         .yc-screen{
-          height: 560px; overflow-y:auto; padding: 4px 16px 90px;
+          flex:1; overflow-y:auto; padding: 4px 16px 20px;
           scrollbar-width: none; position:relative;
         }
         .yc-screen::-webkit-scrollbar{ display:none; }
@@ -1468,10 +1452,10 @@ export default function YassenaCampoApp() {
         }
 
         .yc-tabbar{
-          position:absolute; left:0; right:0; bottom:0;
+          flex-shrink:0;
           display:flex; background:${COLORS.paper};
           border-top:1px solid rgba(20,33,20,0.08);
-          padding: 10px 10px calc(10px + 6px);
+          padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
         }
         .yc-tab{
           flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
@@ -1601,9 +1585,8 @@ export default function YassenaCampoApp() {
 
         /* ===== Autenticação ===== */
         .yc-auth-header{
-          text-align:center; padding: 30px 24px 26px;
+          text-align:center; padding: calc(30px + env(safe-area-inset-top)) 24px 26px;
           background: radial-gradient(ellipse 140% 100% at 50% 0%, ${COLORS.forest} 0%, ${COLORS.forestDeep} 100%);
-          border-radius: 0 0 26px 26px;
         }
         .yc-auth-logo{
           width:72px; height:72px; border-radius:18px; overflow:hidden;
@@ -1668,16 +1651,8 @@ export default function YassenaCampoApp() {
       `}</style>
 
       <div className="yc-phone">
-        <div className="yc-statusbar">
-          <span>{time}</span>
-          <div className="yc-dots">
-            <RadioTower size={12} />
-            <span style={{ fontSize: 10 }}>RF</span>
-          </div>
-        </div>
-
         {authLoading ? (
-          <div className="yc-screen" style={{ height: 560, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="yc-screen" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Loader2 size={22} className="yc-spin" color={COLORS.forestMid} />
           </div>
         ) : !user ? (
@@ -1696,7 +1671,7 @@ export default function YassenaCampoApp() {
                 </p>
               )}
             </div>
-            <div className="yc-screen" style={{ height: 560 }}>
+            <div className="yc-screen">
               {authScreen === "login" && (
                 <LoginScreen onSwitch={() => setAuthScreen("signup")} />
               )}
