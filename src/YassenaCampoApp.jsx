@@ -1455,7 +1455,7 @@ export default function YassenaCampoApp() {
           flex-shrink:0;
           display:flex; background:${COLORS.paper};
           border-top:1px solid rgba(20,33,20,0.08);
-          padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+          padding: 10px 10px calc(52px + env(safe-area-inset-bottom));
         }
         .yc-tab{
           flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
