@@ -8,5 +8,17 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!--
+      Formulário oculto só para o Netlify detectar em build (varredura estática de HTML)
+      e habilitar o Netlify Forms. Os campos precisam bater com os do formulário real,
+      renderizado via React em SugestoesScreen. Nunca é exibido nem enviado por aqui.
+    -->
+    <form name="sugestoes" data-netlify="true" netlify-honeypot="empresa" hidden>
+      <input type="text" name="nome" />
+      <input type="email" name="email" />
+      <textarea name="mensagem"></textarea>
+      <input type="text" name="empresa" />
+    </form>
   </body>
 </html>

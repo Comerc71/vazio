@@ -46,6 +46,11 @@ export async function fetchProfile(userId) {
   return data
 }
 
+export async function updateProfile(userId, patch) {
+  const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
+  if (error) throw error
+}
+
 const ERROR_MESSAGES = [
   [/invalid login credentials/i, 'E-mail ou senha incorretos.'],
   [/email not confirmed/i, 'Confirme seu e-mail antes de entrar — veja sua caixa de entrada.'],

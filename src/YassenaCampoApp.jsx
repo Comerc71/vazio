@@ -3,16 +3,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import {
-  Droplets, Wheat, Zap, AlertTriangle, Settings2, LayoutGrid, Bell,
+  Droplets, Wheat, Zap, Settings2, LayoutGrid, Bell,
   ChevronRight, ChevronDown, RadioTower, CheckCircle2, Clock, MapPin,
   Sun, X, Map as MapIcon, Plus, LocateFixed, Loader2, CloudSun, Navigation,
   User, Building2, Mail, Lock, Eye, EyeOff, Phone, Ruler, Sprout,
-  CheckSquare, Square, LogOut, ArrowRight, ArrowLeft, ShieldCheck, RefreshCw, Trash2,
+  CheckSquare, Square, LogOut, ArrowRight, ArrowLeft, ShieldCheck, RefreshCw, Trash2, Lightbulb,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient";
-import { signUp, signIn, signOut, resendConfirmation, fetchProfile, authErrorMessage } from "./lib/auth";
+import { signUp, signIn, signOut, resendConfirmation, fetchProfile, updateProfile, authErrorMessage } from "./lib/auth";
 import { listDevices, insertDevice, updateDevice, deleteDevice, subscribeToDevices } from "./lib/devices";
 import { watchBestPosition } from "./lib/geolocation";
+import { submitSuggestion } from "./lib/suggestions";
 
 /* ---------------------------------------------------------
    Design tokens — mesma identidade do site Yassena, adaptada
@@ -78,7 +79,6 @@ const VALVE_POINT = {
 };
 
 const ALERTS = [
-  { id: 1, title: "Umidade do solo abaixo do ideal", place: "Talhão 3", time: "há 22 min", level: "atencao" },
   { id: 2, title: "Sinal RF fraco", place: "Bomba do poço · Poço 2", time: "há 3 h", level: "info" },
   { id: 3, title: "Cerca elétrica normalizada", place: "Perímetro norte", time: "ontem, 18:42", level: "ok" },
   { id: 4, title: "Silo de ração reabastecido", place: "Galpão 2", time: "ontem, 07:10", level: "ok" },
@@ -98,6 +98,10 @@ function greetingForHour() {
   if (h < 12) return "Bom dia";
   if (h < 18) return "Boa tarde";
   return "Boa noite";
+}
+
+function formatClock(date) {
+  return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
 function initialsFor(text) {
@@ -244,59 +248,6 @@ function DeviceCard({ device }) {
 }
 
 /* ---------------------------------------------------------
-   Cartão de controle remoto (válvula) — interativo
---------------------------------------------------------- */
-function ValveControlCard() {
-  const [state, setState] = useState("closed"); // closed | sending | open
-  const isOpen = state === "open";
-
-  function toggle() {
-    if (state === "sending") return;
-    setState("sending");
-    setTimeout(() => setState(isOpen ? "closed" : "open"), 1200);
-  }
-
-  return (
-    <div className="yc-card yc-valve" style={{ borderColor: isOpen ? COLORS.forestMid : "rgba(20,33,20,0.10)" }}>
-      <div className="yc-valve-top">
-        <div className="yc-card-icon" style={{ background: `${COLORS.forestMid}1A`, color: COLORS.forestMid }}>
-          <Droplets size={18} strokeWidth={1.8} />
-        </div>
-        <div className="yc-card-info">
-          <div className="yc-card-title-row">
-            <StatusDot status={isOpen ? "ok" : "info"} />
-            <span className="yc-card-title">Irrigação — Talhão 4</span>
-          </div>
-          <span className="yc-card-loc">
-            <MapPin size={11} style={{ marginRight: 3, verticalAlign: -1 }} />
-            Válvula principal
-          </span>
-        </div>
-        <SignalBars level={4} color={COLORS.forestMid} />
-      </div>
-
-      <div className="yc-valve-control">
-        <div>
-          <div className="yc-valve-state">
-            {state === "sending" ? "Enviando comando…" : isOpen ? "Válvula aberta" : "Válvula fechada"}
-          </div>
-          <div className="yc-valve-caption">
-            {state === "sending" ? "aguardando confirmação via RF" : isOpen ? "irrigando desde 06:12" : "toque para abrir remotamente"}
-          </div>
-        </div>
-        <button
-          className={`yc-toggle ${isOpen ? "on" : ""} ${state === "sending" ? "sending" : ""}`}
-          onClick={toggle}
-          aria-label="Alternar válvula"
-        >
-          <span className="yc-toggle-knob" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------
    Telas simples
 --------------------------------------------------------- */
 function PainelScreen({ devices, user }) {
@@ -306,15 +257,8 @@ function PainelScreen({ devices, user }) {
       {firstName && (
         <p className="yc-greeting">{greetingForHour()}, {firstName} 👋</p>
       )}
-      <div className="yc-alert-banner">
-        <AlertTriangle size={15} />
-        <span><strong>Umidade baixa</strong> no Talhão 3 — considere irrigar nas próximas horas.</span>
-      </div>
 
-      <div className="yc-section-label">Controle remoto</div>
-      <ValveControlCard />
-
-      <div className="yc-section-label" style={{ marginTop: 18 }}>Monitoramento</div>
+      <div className="yc-section-label">Monitoramento</div>
       <div className="yc-card-list">
         {devices.map((d) => (
           <DeviceCard key={d.id} device={d} />
@@ -325,9 +269,34 @@ function PainelScreen({ devices, user }) {
 }
 
 function AlertasScreen() {
+  const [alerts, setAlerts] = useState(ALERTS);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+
+  useEffect(() => {
+    if (!confirmingClear) return;
+    const t = setTimeout(() => setConfirmingClear(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmingClear]);
+
+  function handleClearClick() {
+    if (!confirmingClear) {
+      setConfirmingClear(true);
+      return;
+    }
+    setAlerts([]);
+    setConfirmingClear(false);
+  }
+
+  if (alerts.length === 0) {
+    return <p className="yc-field-hint">Nenhuma notificação por aqui.</p>;
+  }
+
   return (
     <div className="yc-card-list">
-      {ALERTS.map((a) => {
+      <button className="yc-linklike" style={{ alignSelf: "flex-end", fontSize: 12 }} onClick={handleClearClick}>
+        {confirmingClear ? "Toque de novo para confirmar" : "Limpar histórico"}
+      </button>
+      {alerts.map((a) => {
         const levelColor = { ok: COLORS.forestMid, atencao: COLORS.goldDim, info: COLORS.inkSoft }[a.level];
         return (
           <div className="yc-card yc-alert-item" key={a.id}>
@@ -338,6 +307,13 @@ function AlertasScreen() {
               <span className="yc-card-title" style={{ display: "block" }}>{a.title}</span>
               <span className="yc-card-loc">{a.place} · {a.time}</span>
             </div>
+            <button
+              className="yc-icon-btn"
+              onClick={() => setAlerts((prev) => prev.filter((item) => item.id !== a.id))}
+              aria-label="Remover notificação"
+            >
+              <X size={14} />
+            </button>
           </div>
         );
       })}
@@ -345,8 +321,9 @@ function AlertasScreen() {
   );
 }
 
-function AjustesScreen({ devices, user, onLogout }) {
+function AjustesScreen({ devices, user, onLogout, onUpdateProfile }) {
   const [editingDevice, setEditingDevice] = useState(null);
+  const [editingFarm, setEditingFarm] = useState(false);
 
   return (
     <div className="yc-card-list">
@@ -378,7 +355,7 @@ function AjustesScreen({ devices, user, onLogout }) {
           <span className="yc-card-loc">{user?.email}</span>
         </div>
       </div>
-      <div className="yc-card yc-alert-item">
+      <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setEditingFarm(true)}>
         <div className="yc-card-icon" style={{ background: `${COLORS.forest}1A`, color: COLORS.forest }}>
           <Building2 size={17} strokeWidth={1.8} />
         </div>
@@ -389,7 +366,8 @@ function AjustesScreen({ devices, user, onLogout }) {
             {user?.hectares ? ` · ${user.hectares} ha` : ""}
           </span>
         </div>
-      </div>
+        <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
+      </button>
 
       <button className="yc-logout-btn" onClick={onLogout}>
         <LogOut size={15} />
@@ -404,7 +382,84 @@ function AjustesScreen({ devices, user, onLogout }) {
           onDeleted={() => setEditingDevice(null)}
         />
       )}
+
+      {editingFarm && (
+        <EditFarmSheet
+          user={user}
+          onClose={() => setEditingFarm(false)}
+          onSaved={async (patch) => {
+            await onUpdateProfile(patch);
+            setEditingFarm(false);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function SugestoesScreen({ user }) {
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState(null);
+
+  const canSend = message.trim().length > 4;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!canSend) return;
+    setError(null);
+    setSending(true);
+    try {
+      await submitSuggestion({ name, email, message: message.trim() });
+      setSent(true);
+      setMessage("");
+    } catch {
+      setError("Não foi possível enviar agora. Tente de novo em instantes.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <div className="yc-auth-body" style={{ alignItems: "center" }}>
+        <div className="yc-verify-icon"><Lightbulb size={22} color={COLORS.gold} /></div>
+        <p className="yc-auth-lead" style={{ textAlign: "center" }}>
+          Sugestão enviada, obrigado! Vamos avaliar com carinho.
+        </p>
+        <button type="button" className="yc-linklike" onClick={() => setSent(false)}>Enviar outra sugestão</button>
+      </div>
+    );
+  }
+
+  return (
+    <form className="yc-auth-body" onSubmit={handleSubmit}>
+      <p className="yc-auth-lead">Tem alguma ideia pra melhorar o app? Manda pra gente — a mensagem chega direto pra equipe.</p>
+
+      <label className="yc-field-label">Seu nome (opcional)</label>
+      <FieldInput icon={User} placeholder="Como podemos te chamar" value={name} onChange={(e) => setName(e.target.value)} />
+
+      <label className="yc-field-label" style={{ marginTop: 12 }}>Seu e-mail (opcional, pra responder)</label>
+      <FieldInput icon={Mail} type="email" placeholder="voce@fazenda.com.br" value={email} onChange={(e) => setEmail(e.target.value)} />
+
+      <label className="yc-field-label" style={{ marginTop: 12 }}>Sugestão</label>
+      <textarea
+        className="yc-input"
+        style={{ minHeight: 110, resize: "vertical" }}
+        placeholder="Conte sua ideia..."
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
+
+      {error && <p className="yc-field-hint" style={{ color: COLORS.alert }}>{error}</p>}
+
+      <button className="yc-save-btn" type="submit" disabled={!canSend || sending} style={{ marginTop: 16 }}>
+        {sending ? <Loader2 size={16} className="yc-spin" /> : <>Enviar sugestão <ArrowRight size={15} /></>}
+      </button>
+    </form>
   );
 }
 
@@ -692,6 +747,61 @@ function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
               {confirmingDelete ? "Toque de novo para confirmar" : "Excluir dispositivo"}
             </>
           )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   Formulário — editar nome e área da propriedade
+--------------------------------------------------------- */
+function EditFarmSheet({ user, onClose, onSaved }) {
+  const [farmName, setFarmName] = useState(user?.farmName || "");
+  const [hectares, setHectares] = useState(user?.hectares || "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const canSave = farmName.trim().length > 1;
+
+  async function handleSave() {
+    if (!canSave) return;
+    setError(null);
+    setSaving(true);
+    try {
+      await onSaved({ farmName: farmName.trim(), hectares });
+    } catch {
+      setError("Não foi possível salvar as alterações. Tente novamente.");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="yc-sheet-backdrop" onClick={onClose}>
+      <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="yc-sheet-handle" />
+        <div className="yc-sheet-head">
+          <span className="yc-sheet-title">Editar propriedade</span>
+          <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
+        </div>
+
+        <label className="yc-field-label">Nome da fazenda</label>
+        <input className="yc-input" value={farmName} onChange={(e) => setFarmName(e.target.value)} />
+
+        <label className="yc-field-label" style={{ marginTop: 12 }}>Área (ha)</label>
+        <input
+          className="yc-input"
+          type="number"
+          min="0"
+          placeholder="Opcional"
+          value={hectares}
+          onChange={(e) => setHectares(e.target.value)}
+        />
+
+        {error && <p className="yc-field-hint" style={{ color: COLORS.alert }}>{error}</p>}
+
+        <button className="yc-save-btn" onClick={handleSave} disabled={!canSave || saving}>
+          {saving ? <Loader2 size={16} className="yc-spin" /> : "Salvar alterações"}
         </button>
       </div>
     </div>
@@ -1142,7 +1252,12 @@ function MapaScreen({ devices, onAddDevice }) {
 --------------------------------------------------------- */
 export default function YassenaCampoApp() {
   const [tab, setTab] = useState("painel");
-  const [time] = useState("09:41");
+  const [time, setTime] = useState(() => formatClock(new Date()));
+
+  useEffect(() => {
+    const t = setInterval(() => setTime(formatClock(new Date())), 15000);
+    return () => clearInterval(t);
+  }, []);
   const [devices, setDevices] = useState([]);
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -1211,11 +1326,16 @@ export default function YassenaCampoApp() {
   const addDevice = (device) => { insertDevice(device).catch((err) => console.error(err)); };
   const handleLogout = () => { signOut(); setTab("painel"); setAuthScreen("login"); };
   const handleSignupSubmitted = (email) => { setPendingEmail(email); setAuthScreen("verify"); };
+  const handleUpdateProfile = async ({ farmName, hectares }) => {
+    await updateProfile(session.user.id, { farm_name: farmName, hectares: hectares || null });
+    setProfile((p) => ({ ...p, farm_name: farmName, hectares: hectares || null }));
+  };
 
   const TABS = [
     { id: "painel", label: "Painel", icon: LayoutGrid },
     { id: "mapa", label: "Mapa", icon: MapIcon },
     { id: "alertas", label: "Alertas", icon: Bell },
+    { id: "sugestoes", label: "Sugestões", icon: Lightbulb },
     { id: "ajustes", label: "Ajustes", icon: Settings2 },
   ];
 
@@ -1265,15 +1385,6 @@ export default function YassenaCampoApp() {
         }
         .yc-screen::-webkit-scrollbar{ display:none; }
 
-        .yc-alert-banner{
-          display:flex; align-items:flex-start; gap:10px;
-          background:${COLORS.alertBg}; color:${COLORS.alert};
-          border:1px solid rgba(184,80,63,0.25);
-          padding:11px 13px; border-radius:12px; font-size:12.5px; line-height:1.4;
-          margin: 6px 0 18px;
-        }
-        .yc-alert-banner strong{ font-weight:700; }
-
         .yc-section-label{
           font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase;
           color:${COLORS.inkSoft}; font-weight:600; margin-bottom:10px;
@@ -1305,30 +1416,6 @@ export default function YassenaCampoApp() {
           display:flex; justify-content:space-between; margin-top:6px;
           font-family:'IBM Plex Mono',monospace; font-size:10px; color:${COLORS.inkSoft};
         }
-
-        .yc-valve{ padding: 13px 13px 15px; }
-        .yc-valve-top{ display:flex; align-items:center; gap:11px; }
-        .yc-valve-control{
-          display:flex; align-items:center; justify-content:space-between;
-          margin-top:14px; padding-top:13px; border-top:1px dashed rgba(20,33,20,0.12);
-        }
-        .yc-valve-state{ font-size:13.5px; font-weight:600; color:${COLORS.ink}; }
-        .yc-valve-caption{ font-size:11px; color:${COLORS.inkSoft}; margin-top:2px; }
-
-        .yc-toggle{
-          width:50px; height:29px; border-radius:999px; border:none; cursor:pointer;
-          background: ${COLORS.forest}33; position:relative; flex-shrink:0;
-          transition: background .25s ease;
-        }
-        .yc-toggle.on{ background:${COLORS.forestMid}; }
-        .yc-toggle.sending{ background:${COLORS.goldDim}; }
-        .yc-toggle-knob{
-          position:absolute; top:3px; left:3px; width:23px; height:23px; border-radius:999px;
-          background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.25);
-          transition: transform .25s ease;
-        }
-        .yc-toggle.on .yc-toggle-knob{ transform: translateX(21px); }
-        .yc-toggle.sending .yc-toggle-knob{ transform: translateX(10px); }
 
         .yc-alert-item{ display:flex; align-items:center; gap:11px; padding:12px 13px; }
         .yc-alert-item-btn{
@@ -1586,7 +1673,10 @@ export default function YassenaCampoApp() {
               {tab === "painel" && <PainelScreen devices={devices} user={user} />}
               {tab === "mapa" && <MapaScreen devices={devices} onAddDevice={addDevice} />}
               {tab === "alertas" && <AlertasScreen />}
-              {tab === "ajustes" && <AjustesScreen devices={devices} user={user} onLogout={handleLogout} />}
+              {tab === "sugestoes" && <SugestoesScreen user={user} />}
+              {tab === "ajustes" && (
+                <AjustesScreen devices={devices} user={user} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
+              )}
             </div>
 
             <div className="yc-tabbar">
