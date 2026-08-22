@@ -816,7 +816,7 @@ function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
         <p className="yc-field-hint" style={{ marginTop: 0, marginBottom: 8 }}>
           Programe o gateway/nó pra enviar leituras deste sensor com um POST pra esse endereço, usando o ID e a chave abaixo.
         </p>
-        <code className="yc-code-block">{`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ingest-reading`}</code>
+        <code className="yc-code-block">{`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/swift-api`}</code>
         <div className="yc-integration-row">
           <div>
             <span className="yc-field-label" style={{ marginTop: 8 }}>device_id</span>

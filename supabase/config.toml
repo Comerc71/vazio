@@ -1,5 +1,5 @@
 # Usado apenas se você optar por publicar as Edge Functions pela Supabase CLI
 # (supabase functions deploy). Publicando direto pelo Dashboard, desligue a
 # opção "Enforce JWT Verification" na tela da função em vez deste arquivo.
-[functions.ingest-reading]
+[functions.swift-api]
 verify_jwt = false
