@@ -169,3 +169,12 @@ create policy "avatars: dono gerencia seu arquivo"
   on storage.objects for all
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------------------------------------------------------
+-- Ingestão de dados dos nós de campo (gateway LoRa/RF)
+-- Cada dispositivo ganha uma chave própria (não é a senha do usuário)
+-- que o gateway usa para autenticar no endpoint da Edge Function
+-- "ingest-reading". Veja supabase/functions/ingest-reading/index.ts.
+-- ---------------------------------------------------------
+alter table public.devices
+  add column api_key text not null default encode(gen_random_bytes(18), 'hex') unique;
