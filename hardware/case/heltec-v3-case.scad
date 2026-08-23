@@ -26,6 +26,11 @@
    Parâmetros — ajuste aqui
 --------------------------------------------------------- */
 
+// Tamanho externo da case — fixado por você (deixa espaço de sobra em
+// volta da placa, por exemplo pra uma bateria maior)
+CASE_L = 200;   // comprimento externo
+CASE_W = 100;   // largura externa
+
 // Placa (Heltec WiFi LoRa 32 V3) — CONFIRME essas medidas na sua placa
 BOARD_L = 51.3;   // comprimento
 BOARD_W = 25.4;   // largura
@@ -66,12 +71,12 @@ $fn = 64; // suavidade dos círculos na pré-visualização/render
 /* ---------------------------------------------------------
    Dimensões derivadas
 --------------------------------------------------------- */
-inner_l = BOARD_L + 5;             // folga lateral pro trilho + margem
-inner_w = BOARD_W + 5;
-inner_h = CLEAR_TOP + BOARD_T + CLEAR_BOTTOM;
+outer_l = CASE_L;
+outer_w = CASE_W;
 
-outer_l = inner_l + WALL * 2;
-outer_w = inner_w + WALL * 2;
+inner_l = outer_l - WALL * 2;
+inner_w = outer_w - WALL * 2;
+inner_h = CLEAR_TOP + BOARD_T + CLEAR_BOTTOM;
 
 groove_d = ORING_CORD_D * (1 - ORING_GROOVE_COMPRESSION) + ORING_CORD_D; // largura do sulco com folga
 lid_h = 6 + ORING_CORD_D;           // altura da tampa (rebaixo + folga do cordão)
@@ -88,6 +93,10 @@ module rounded_rect(l, w, h, r) {
   }
 }
 
+// Distância máxima entre parafusos vizinhos pra manter o anel de
+// vedação comprimido por igual em cases grandes
+MAX_SCREW_SPACING = 80;
+
 module screw_positions() {
   positions = [
     [SCREW_INSET, SCREW_INSET],
@@ -96,6 +105,18 @@ module screw_positions() {
     [outer_l - SCREW_INSET, outer_w - SCREW_INSET],
   ];
   for (p = positions) translate(p) children();
+
+  // parafusos extras no meio das bordas compridas, só entram se a case
+  // for grande o bastante pra precisar
+  span = outer_l - SCREW_INSET * 2;
+  extra_count = floor(span / MAX_SCREW_SPACING);
+  if (extra_count > 1) {
+    for (i = [1 : extra_count - 1]) {
+      x = SCREW_INSET + span * i / extra_count;
+      translate([x, SCREW_INSET]) children();
+      translate([x, outer_w - SCREW_INSET]) children();
+    }
+  }
 }
 
 /* ---------------------------------------------------------
