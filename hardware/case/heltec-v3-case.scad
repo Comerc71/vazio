@@ -159,15 +159,14 @@ module base() {
    Tampa — encaixa por cima, comprime o O-ring, mesmos furos de parafuso
 --------------------------------------------------------- */
 module lid() {
+  // tampa lisa por baixo: pressiona o cordão de vedação direto contra o
+  // sulco da base (vedação de face, mais tolerante à impressão que um
+  // encaixe macho/fêmea)
   difference() {
     union() {
       rounded_rect(outer_l, outer_w, lid_h, CORNER_R);
       screw_positions() cylinder(h = lid_h + 4, d = SCREW_BOSS_D);
     }
-
-    // rebaixo que entra na base e pressiona o O-ring
-    translate([WALL / 2, WALL / 2, -1])
-      rounded_rect(outer_l - WALL, outer_w - WALL, groove_d + 2, CORNER_R * 0.8);
 
     // furos dos parafusos (passantes, cabeça escareada por cima)
     screw_positions() {
