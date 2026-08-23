@@ -39,7 +39,7 @@ CLEAR_TOP = 8;     // espaço acima da placa (display OLED + antena + botões)
 CLEAR_BOTTOM = 4;  // espaço abaixo da placa (conector de bateria, headers)
 
 // Casca
-WALL = 2.4;              // espessura de parede — mais grossa ajuda a vedação
+WALL = 3.5;              // espessura de parede — mais grossa ajuda a vedação e a rigidez
 CORNER_R = 3;             // raio dos cantos (menos concentração de tensão / mais fácil vedar)
 RAIL_DEPTH = 1.6;         // profundidade do trilho onde a placa desliza
 RAIL_CLEARANCE = 0.3;     // folga do trilho em relação à espessura da placa
