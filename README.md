@@ -20,6 +20,7 @@ Abre em `http://localhost:5173`.
 - [`supabase/schema.sql`](supabase/schema.sql) — schema do banco (tabelas `profiles`, `devices`, `device_readings`, `alerts`, todas com Row Level Security).
 - [`supabase/functions/swift-api/`](supabase/functions/swift-api/index.ts) — Edge Function que recebe leituras dos gateways de campo (autenticada por chave própria de cada dispositivo) e grava no banco; o app atualiza em tempo real a partir daí.
 - [`firmware/`](firmware/README.md) — código Arduino dos nós de campo (transmissor) e do gateway (receptor) rodando em placas Heltec WiFi LoRa 32 V3.
+- [`hardware/case/`](hardware/case/README.md) — desenho paramétrico (OpenSCAD) da case externa do nó de campo, pensada para IP68.
 - [`public/logo.png`](public/logo.png) — imagem-fonte do PWA; os demais tamanhos (`pwa-*.png`, `favicon.ico`, `apple-touch-icon`) são gerados automaticamente a cada `npm run build` pelo `vite-plugin-pwa`.
 - Ícones de interface via [`lucide-react`](https://lucide.dev/); mapa via [`react-leaflet`](https://react-leaflet.js.org/) + OpenStreetMap.
 
