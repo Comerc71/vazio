@@ -8,9 +8,8 @@
 -- ---------------------------------------------------------
 alter table public.devices add column if not exists setor_id smallint;
 
-create unique index if not exists devices_owner_setor_unique
-  on public.devices (owner_id, setor_id)
-  where setor_id is not null;
+-- Nao ha indice unico aqui de proposito: um setor pode ter mais de um
+-- dispositivo (ex: um sensor de umidade e uma valvula no mesmo talhao).
 
 -- ---------------------------------------------------------
 -- Token do gateway (Base): um por conta/fazenda, configurado uma unica vez

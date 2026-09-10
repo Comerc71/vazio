@@ -7,7 +7,10 @@
 // GET com header "Authorization: Bearer <token>" (ou "?token=..." na query).
 //
 // Resposta: array de { setor_id, device_id, api_key } - um item por dispositivo
-// do dono do token que ja tem um setor configurado (Ajustes > dispositivo > Setor).
+// SENSOR (nao valvula) do dono do token que ja tem um setor configurado
+// (Ajustes > dispositivo > Setor). Um setor pode ter tambem uma valvula, mas
+// essa nao recebe telemetria - o botao Abrir/Fechar no app fala com
+// lora_comandos direto, sem passar por aqui.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -48,6 +51,7 @@ Deno.serve(async (req) => {
     .select('id, api_key, setor_id')
     .eq('owner_id', gateway.owner_id)
     .not('setor_id', 'is', null)
+    .neq('type', 'valvula')
 
   if (devicesError) return json({ error: 'Falha ao consultar dispositivos' }, 500)
 

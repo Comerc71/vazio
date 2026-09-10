@@ -1013,8 +1013,8 @@ function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
         valvula_id: valvulaId.trim() === "" ? 1 : Number(valvulaId),
       });
       onSaved();
-    } catch {
-      setError("Não foi possível salvar as alterações. Tente novamente.");
+    } catch (err) {
+      setError(err?.message || "Não foi possível salvar as alterações. Tente novamente.");
       setSaving(false);
     }
   }
