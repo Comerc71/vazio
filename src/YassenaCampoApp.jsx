@@ -794,19 +794,28 @@ function AddDeviceSheet({ onClose, onSave, myLocation, locStatus, requestLocatio
   const [name, setName] = useState("");
   const [typeId, setTypeId] = useState(DEVICE_TYPES[0].id);
   const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   const canSave = name.trim().length > 1 && !!myLocation;
 
-  function handleSave() {
+  async function handleSave() {
     if (!canSave) return;
-    const type = DEVICE_TYPES.find((t) => t.id === typeId);
-    onSave({
-      name: name.trim(),
-      location: note.trim() || type.label,
-      type: typeId,
-      lat: myLocation.lat,
-      lon: myLocation.lon,
-    });
+    setError(null);
+    setSaving(true);
+    try {
+      const type = DEVICE_TYPES.find((t) => t.id === typeId);
+      await onSave({
+        name: name.trim(),
+        location: note.trim() || type.label,
+        type: typeId,
+        lat: myLocation.lat,
+        lon: myLocation.lon,
+      });
+    } catch (err) {
+      setError(err?.message || "Não foi possível salvar. Tente novamente.");
+      setSaving(false);
+    }
   }
 
   return (
@@ -872,8 +881,10 @@ function AddDeviceSheet({ onClose, onSave, myLocation, locStatus, requestLocatio
           <p className="yc-field-hint">Fique perto do dispositivo instalado e capture a localização antes de salvar.</p>
         )}
 
-        <button className="yc-save-btn" onClick={handleSave} disabled={!canSave}>
-          Salvar dispositivo
+        {error && <p className="yc-field-hint" style={{ color: COLORS.alert }}>{error}</p>}
+
+        <button className="yc-save-btn" onClick={handleSave} disabled={!canSave || saving}>
+          {saving ? <Loader2 size={16} className="yc-spin" /> : "Salvar dispositivo"}
         </button>
       </div>
     </div>
@@ -1644,8 +1655,8 @@ function MapaScreen({ devices, onAddDevice }) {
           myLocation={myLocation}
           locStatus={locStatus}
           requestLocation={requestLocation}
-          onSave={(device) => {
-            onAddDevice(device);
+          onSave={async (device) => {
+            await onAddDevice(device);
             setShowAdd(false);
           }}
         />
@@ -1725,7 +1736,7 @@ export default function YassenaCampoApp() {
       }
     : null;
 
-  const addDevice = (device) => { insertDevice(device).catch((err) => console.error(err)); };
+  const addDevice = (device) => insertDevice(device);
   const handleLogout = () => { signOut(); setTab("painel"); setAuthScreen("login"); };
   const handleSignupSubmitted = (email) => { setPendingEmail(email); setAuthScreen("verify"); };
   const handleUpdateProfile = async ({ farmName, hectares }) => {
