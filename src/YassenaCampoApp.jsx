@@ -8,11 +8,13 @@ import {
   Sun, X, Map as MapIcon, Plus, LocateFixed, Loader2, CloudSun, Navigation,
   User, Building2, Mail, Lock, Eye, EyeOff, Phone, Ruler, Sprout,
   CheckSquare, Square, LogOut, ArrowRight, ArrowLeft, ShieldCheck, RefreshCw, Trash2, Lightbulb,
-  HelpCircle, Calendar, Camera,
+  HelpCircle, Calendar, Camera, Power,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient";
 import { signUp, signIn, signOut, resendConfirmation, fetchProfile, updateProfile, uploadAvatar, authErrorMessage } from "./lib/auth";
 import { listDevices, insertDevice, updateDevice, deleteDevice, subscribeToDevices, fetchDeviceReadings, regenerateApiKey } from "./lib/devices";
+import { getOrCreateGatewayToken, regenerateGatewayToken } from "./lib/gateway";
+import { enviarComandoValvula, consultarStatusComando } from "./lib/comandos";
 import { watchBestPosition } from "./lib/geolocation";
 import { submitSuggestion } from "./lib/suggestions";
 
@@ -50,6 +52,7 @@ const DEVICE_TYPES = [
   { id: "cerca", label: "Cerca elétrica", icon: Zap },
   { id: "bomba", label: "Bomba / energia solar", icon: Sun },
   { id: "clima", label: "Estação meteorológica", icon: CloudSun },
+  { id: "valvula", label: "Válvula / irrigação", icon: Power },
   { id: "outro", label: "Outro sensor RF", icon: RadioTower },
 ];
 
@@ -171,6 +174,107 @@ function StatusDot({ status }) {
 }
 
 /* ---------------------------------------------------------
+   Controles de válvula (abrir/fechar) — grava um comando em lora_comandos,
+   que a Base já consulta a cada 5s e envia por LoRa pro setor certo.
+--------------------------------------------------------- */
+const DURACAO_OPCOES = [
+  { segundos: 300, label: "5 min" },
+  { segundos: 900, label: "15 min" },
+  { segundos: 1800, label: "30 min" },
+];
+
+function ValvulaControls({ device }) {
+  const [duracao, setDuracao] = useState(DURACAO_OPCOES[0].segundos);
+  const [enviando, setEnviando] = useState(null); // null | "abrir" | "fechar"
+  const [status, setStatus] = useState(null); // null | "enviado" | "confirmado" | "falhou" | "erro"
+
+  async function disparar(acao) {
+    if (!device.setor_id) return;
+    setEnviando(acao === 1 ? "abrir" : "fechar");
+    setStatus(null);
+    try {
+      const id = await enviarComandoValvula({
+        setorId: device.setor_id,
+        valvulaId: device.valvula_id || 1,
+        acao,
+        duracaoSegundos: acao === 1 ? duracao : 0,
+      });
+      setStatus("enviado");
+      for (let tentativa = 0; tentativa < 4; tentativa++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        try {
+          const s = await consultarStatusComando(id);
+          if (s === "confirmado" || s === "falhou") {
+            setStatus(s);
+            break;
+          }
+        } catch {
+          break;
+        }
+      }
+    } catch {
+      setStatus("erro");
+    } finally {
+      setEnviando(null);
+    }
+  }
+
+  if (!device.setor_id) {
+    return (
+      <p className="yc-field-hint">
+        Configure o "Setor (rádio LoRa)" deste dispositivo (toque em Ajustes) pra poder acionar a válvula.
+      </p>
+    );
+  }
+
+  const statusLabel = {
+    enviado: "Comando enviado, aguardando confirmação da placa…",
+    confirmado: "Confirmado pela placa de Campo.",
+    falhou: "A placa recusou o comando (confira o número da válvula).",
+    erro: "Não foi possível enviar. Tente de novo.",
+  }[status];
+
+  return (
+    <div className="yc-card-meta" style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        {DURACAO_OPCOES.map((o) => (
+          <button
+            key={o.segundos}
+            type="button"
+            className={`yc-type-btn ${duracao === o.segundos ? "active" : ""}`}
+            onClick={() => setDuracao(o.segundos)}
+            style={{ flex: 1 }}
+          >
+            <span>{o.label}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          className="yc-save-btn"
+          style={{ flex: 1, marginTop: 0 }}
+          onClick={() => disparar(1)}
+          disabled={!!enviando}
+        >
+          {enviando === "abrir" ? <Loader2 size={16} className="yc-spin" /> : "Abrir"}
+        </button>
+        <button
+          type="button"
+          className="yc-logout-btn"
+          style={{ flex: 1, marginTop: 0 }}
+          onClick={() => disparar(0)}
+          disabled={!!enviando}
+        >
+          {enviando === "fechar" ? <Loader2 size={16} className="yc-spin" /> : "Fechar"}
+        </button>
+      </div>
+      {statusLabel && <p className="yc-field-hint" style={{ margin: 0 }}>{statusLabel}</p>}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
    Cartão de dispositivo (expansível)
 --------------------------------------------------------- */
 function DeviceCard({ device }) {
@@ -217,11 +321,17 @@ function DeviceCard({ device }) {
       {open && (
         <div className="yc-card-body">
           <p className="yc-card-sub">{device.sub || "Sensor cadastrado recentemente — aguardando primeiras leituras."}</p>
-          {hasHistory && <Sparkline data={history} color={accent} />}
-          <div className="yc-card-meta">
-            <span><Clock size={11} style={{ marginRight: 4, verticalAlign: -1 }} />{relativeTime(device.updated_at)}</span>
-            <span>RF · {device.signal <= 2 ? "sinal fraco" : "sinal bom"}</span>
-          </div>
+          {device.type === "valvula" ? (
+            <ValvulaControls device={device} />
+          ) : (
+            <>
+              {hasHistory && <Sparkline data={history} color={accent} />}
+              <div className="yc-card-meta">
+                <span><Clock size={11} style={{ marginRight: 4, verticalAlign: -1 }} />{relativeTime(device.updated_at)}</span>
+                <span>RF · {device.signal <= 2 ? "sinal fraco" : "sinal bom"}</span>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -302,9 +412,91 @@ function AlertasScreen() {
   );
 }
 
+/* ---------------------------------------------------------
+   Token do gateway (Base) — configurado uma única vez no firmware,
+   usado pela Base pra buscar sozinha o pareamento setor -> dispositivo.
+--------------------------------------------------------- */
+function GatewayTokenSheet({ onClose }) {
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
+  const [confirmingRegen, setConfirmingRegen] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getOrCreateGatewayToken()
+      .then((t) => { if (!cancelled) setToken(t); })
+      .catch(() => { if (!cancelled) setError("Não foi possível carregar o token. Tente novamente."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!confirmingRegen) return;
+    const t = setTimeout(() => setConfirmingRegen(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmingRegen]);
+
+  async function handleRegenerate() {
+    if (!confirmingRegen) {
+      setConfirmingRegen(true);
+      return;
+    }
+    setRegenerating(true);
+    setError(null);
+    try {
+      const newToken = await regenerateGatewayToken();
+      setToken(newToken);
+      setConfirmingRegen(false);
+    } catch {
+      setError("Não foi possível gerar um novo token. Tente novamente.");
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  return (
+    <div className="yc-sheet-backdrop" onClick={onClose}>
+      <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="yc-sheet-handle" />
+        <div className="yc-sheet-head">
+          <span className="yc-sheet-title">Token do gateway (Base)</span>
+          <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
+        </div>
+
+        <p className="yc-field-hint" style={{ marginTop: 0 }}>
+          Cole esse token uma única vez no firmware da placa Base (gateway com Wi-Fi). Com ele, a Base
+          busca sozinha, periodicamente, qual dispositivo recebe os dados de cada setor — sempre que você
+          mudar o "Setor" de um dispositivo em Ajustes, a Base atualiza sem precisar de código novo.
+        </p>
+
+        {loading ? (
+          <Loader2 size={18} className="yc-spin" />
+        ) : (
+          <code className="yc-code-block">{token}</code>
+        )}
+
+        {error && <p className="yc-field-hint" style={{ color: COLORS.alert }}>{error}</p>}
+
+        <button
+          type="button"
+          className="yc-linklike"
+          style={{ marginTop: 8, fontSize: 12 }}
+          onClick={handleRegenerate}
+          disabled={loading || regenerating}
+        >
+          {regenerating ? "Gerando…" : confirmingRegen ? "Toque de novo pra confirmar (invalida o token atual)" : "Gerar novo token"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvatar }) {
   const [editingDevice, setEditingDevice] = useState(null);
   const [editingFarm, setEditingFarm] = useState(false);
+  const [showGatewayToken, setShowGatewayToken] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const avatarInputRef = useRef(null);
@@ -343,6 +535,18 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
           <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
         </button>
       ))}
+
+      <div className="yc-section-label" style={{ marginTop: 18 }}>Gateway</div>
+      <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setShowGatewayToken(true)}>
+        <div className="yc-card-icon" style={{ background: `${COLORS.forest}1A`, color: COLORS.forest }}>
+          <ShieldCheck size={17} strokeWidth={1.8} />
+        </div>
+        <div className="yc-card-info">
+          <span className="yc-card-title" style={{ display: "block" }}>Token do gateway (Base)</span>
+          <span className="yc-card-loc">Necessário uma vez, no firmware da placa Base</span>
+        </div>
+        <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
+      </button>
 
       <div className="yc-section-label" style={{ marginTop: 18 }}>Conta</div>
       <div className="yc-card yc-alert-item">
@@ -413,6 +617,8 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
           }}
         />
       )}
+
+      {showGatewayToken && <GatewayTokenSheet onClose={() => setShowGatewayToken(false)} />}
     </div>
   );
 }
@@ -675,6 +881,57 @@ function AddDeviceSheet({ onClose, onSave, myLocation, locStatus, requestLocatio
 }
 
 /* ---------------------------------------------------------
+   Guia das chavinhas do DIP switch — qual combinação corresponde
+   a cada setor, pro produtor configurar na placa de Campo.
+--------------------------------------------------------- */
+function dipSwitchCombinacao(setor) {
+  const valor = setor - 1; // setor 1 = todas as chaves desligadas
+  return [0, 1, 2, 3].map((bit) => Boolean((valor >> bit) & 1));
+}
+
+function DipSwitchGuideSheet({ onClose, maxSetor = 5 }) {
+  const setores = Array.from({ length: maxSetor }, (_, i) => i + 1);
+
+  return (
+    <div className="yc-sheet-backdrop" onClick={onClose}>
+      <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="yc-sheet-handle" />
+        <div className="yc-sheet-head">
+          <span className="yc-sheet-title">Chaves do setor (DIP switch)</span>
+          <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
+        </div>
+
+        <p className="yc-field-hint" style={{ marginTop: 0 }}>
+          Na placa de Campo, ajuste as 4 chavinhas conforme a linha do setor desejado antes de ligar —
+          ON = chave fechada (contato com o terra), OFF = chave aberta. Esse número precisa ser o mesmo
+          que você colocar no campo "Setor" deste dispositivo.
+        </p>
+
+        <div className="yc-dip-table">
+          <div className="yc-dip-row yc-dip-head">
+            <span>Setor</span><span>1</span><span>2</span><span>3</span><span>4</span>
+          </div>
+          {setores.map((setor) => (
+            <div className="yc-dip-row" key={setor}>
+              <span className="yc-dip-setor">{setor}</span>
+              {dipSwitchCombinacao(setor).map((ligada, i) => (
+                <span key={i} className={`yc-dip-chip ${ligada ? "on" : "off"}`}>{ligada ? "ON" : "OFF"}</span>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <p className="yc-field-hint">
+          Precisar de mais de {maxSetor} setores? As mesmas 4 chaves dão pra até 16 combinações — é só
+          continuar a mesma lógica binária (chave 1 = valor 1, chave 2 = valor 2, chave 3 = valor 4,
+          chave 4 = valor 8; some as ligadas e adicione 1).
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
    Formulário — editar / realocar / excluir um dispositivo
 --------------------------------------------------------- */
 function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
@@ -690,6 +947,9 @@ function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
   const [apiKey, setApiKey] = useState(device.api_key);
   const [regenerating, setRegenerating] = useState(false);
   const [confirmingRegen, setConfirmingRegen] = useState(false);
+  const [setorId, setSetorId] = useState(device.setor_id != null ? String(device.setor_id) : "");
+  const [valvulaId, setValvulaId] = useState(String(device.valvula_id ?? 1));
+  const [showDipGuide, setShowDipGuide] = useState(false);
 
   useEffect(() => {
     if (myLocation) setCoords({ lat: myLocation.lat, lon: myLocation.lon });
@@ -738,6 +998,8 @@ function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
         type: typeId,
         lat: coords.lat,
         lon: coords.lon,
+        setor_id: setorId.trim() === "" ? null : Number(setorId),
+        valvula_id: valvulaId.trim() === "" ? 1 : Number(valvulaId),
       });
       onSaved();
     } catch {
@@ -812,6 +1074,47 @@ function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
           </p>
         )}
 
+        <label className="yc-field-label" style={{ marginTop: 12 }}>Setor (rádio LoRa)</label>
+        <input
+          className="yc-input"
+          type="number"
+          min="1"
+          max="16"
+          placeholder="Ex: 1"
+          value={setorId}
+          onChange={(e) => setSetorId(e.target.value)}
+        />
+        <p className="yc-field-hint" style={{ marginTop: 4, marginBottom: 0 }}>
+          Use o mesmo número configurado nas chavinhas (DIP switch) da placa de Campo instalada neste setor.
+          A Base busca esse pareamento sozinha — não precisa mexer em código.
+        </p>
+        <button
+          type="button"
+          className="yc-linklike"
+          style={{ marginTop: 4, fontSize: 12 }}
+          onClick={() => setShowDipGuide(true)}
+        >
+          Ver tabela de chaves por setor
+        </button>
+
+        {typeId === "valvula" && (
+          <>
+            <label className="yc-field-label" style={{ marginTop: 12 }}>Válvula (nº)</label>
+            <input
+              className="yc-input"
+              type="number"
+              min="1"
+              max="2"
+              placeholder="Ex: 1"
+              value={valvulaId}
+              onChange={(e) => setValvulaId(e.target.value)}
+            />
+            <p className="yc-field-hint" style={{ marginTop: 4 }}>
+              Qual saída/relé desse setor esse botão controla (a placa de Campo tem 2 saídas de válvula).
+            </p>
+          </>
+        )}
+
         <label className="yc-field-label" style={{ marginTop: 12 }}>Integração RF (gateway → nuvem)</label>
         <p className="yc-field-hint" style={{ marginTop: 0, marginBottom: 8 }}>
           Programe o gateway/nó pra enviar leituras deste sensor com um POST pra esse endereço, usando o ID e a chave abaixo.
@@ -862,6 +1165,8 @@ function EditDeviceSheet({ device, onClose, onSaved, onDeleted }) {
           )}
         </button>
       </div>
+
+      {showDipGuide && <DipSwitchGuideSheet onClose={() => setShowDipGuide(false)} />}
     </div>
   );
 }
@@ -1696,6 +2001,21 @@ export default function YassenaCampoApp() {
           -webkit-user-select:all; user-select:all;
         }
         .yc-integration-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
+
+        .yc-dip-table{ margin-top:10px; border:1px solid rgba(20,33,20,0.12); border-radius:10px; overflow:hidden; }
+        .yc-dip-row{
+          display:grid; grid-template-columns:1.1fr repeat(4, 1fr); align-items:center;
+          padding:7px 10px; font-size:12px; color:${COLORS.ink};
+        }
+        .yc-dip-row:not(:last-child){ border-bottom:1px solid rgba(20,33,20,0.08); }
+        .yc-dip-head{ background:rgba(20,33,20,0.04); font-weight:600; font-size:11px; color:${COLORS.inkSoft}; }
+        .yc-dip-setor{ font-weight:700; font-family:'Space Grotesk',sans-serif; }
+        .yc-dip-chip{
+          justify-self:center; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+          padding:2px 8px; border-radius:999px; font-weight:600;
+        }
+        .yc-dip-chip.on{ background:${COLORS.forestMid}1A; color:${COLORS.forestMid}; }
+        .yc-dip-chip.off{ background:rgba(20,33,20,0.06); color:${COLORS.inkSoft}; }
 
         .yc-save-btn{
           width:100%; margin-top:18px; background:${COLORS.gold}; color:${COLORS.forestDeep};

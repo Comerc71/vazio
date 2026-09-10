@@ -3,3 +3,12 @@
 # opção "Enforce JWT Verification" na tela da função em vez deste arquivo.
 [functions.swift-api]
 verify_jwt = false
+
+[functions.gateway-pareamento]
+verify_jwt = false
+
+[functions.gateway-telemetria]
+verify_jwt = false
+
+[functions.gateway-comandos]
+verify_jwt = false

@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient'
 
-const SELECT_COLUMNS = 'id, name, location, type, status, signal, reading, sub, lat, lon, updated_at, api_key'
+const SELECT_COLUMNS = 'id, name, location, type, status, signal, reading, sub, lat, lon, updated_at, api_key, setor_id, valvula_id'
 
 export async function listDevices() {
   const { data, error } = await supabase
