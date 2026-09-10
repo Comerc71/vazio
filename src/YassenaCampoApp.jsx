@@ -561,11 +561,80 @@ function NovoDispositivoGuiaSheet({ onClose }) {
   );
 }
 
+/* ---------------------------------------------------------
+   Guia — como combinar com um irrigador tradicional já
+   instalado (Rain Bird ESP-TM2 e semelhantes), mantendo a
+   programação original dele e adicionando controle remoto.
+   A parte elétrica é sempre serviço técnico, uma vez por
+   válvula — não é autoatendimento do produtor.
+--------------------------------------------------------- */
+const GUIA_TRADICIONAL_PASSOS = [
+  {
+    titulo: "Não existe conexão digital com o irrigador antigo",
+    texto: 'Controladores como o Rain Bird ESP-TM2 só aceitam controle remoto pelo módulo/app própios deles - não há porta ou protocolo aberto pra outro sistema "conversar" com ele. A integração acontece na fiação da válvula, não no controlador.',
+  },
+  {
+    titulo: "Um relé de 2 vias (DPDT) por válvula",
+    texto: 'Em vez do relé simples usado numa válvula nova, cada válvula que vai ter controle remoto extra precisa de um relé DPDT: no estado normal (desligado), a válvula continua ligada ao controlador antigo, funcionando como sempre. Só quando o Campo manda abrir é que o relé desliga o controlador antigo daquele fio e assume a válvula.',
+  },
+  {
+    titulo: "Isso é serviço de eletricista/técnico",
+    texto: "Envolve fiação de 24V AC e o transformador do irrigador - diferente do DIP switch (que o produtor mesmo ajusta), essa parte precisa ser feita uma única vez por um profissional, seguindo as normas elétricas locais.",
+  },
+  {
+    titulo: "Nunca programe os dois ao mesmo tempo na mesma válvula",
+    texto: "O relé evita curto-circuito, mas não evita conflito de uso: combine com quem opera o irrigador antigo pra não haver duas ordens (abrir e fechar) disputando a mesma válvula na mesma hora.",
+  },
+  {
+    titulo: "Depois de instalado, o cadastro é igual a qualquer válvula",
+    texto: 'Uma vez com o relé instalado, é só seguir o guia "Adicionar um novo dispositivo de campo" normalmente - setor, tipo Válvula e número da válvula.',
+  },
+];
+
+function GuiaControladorTradicionalSheet({ onClose }) {
+  return (
+    <div className="yc-sheet-backdrop" onClick={onClose}>
+      <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="yc-sheet-handle" />
+        <div className="yc-sheet-head">
+          <span className="yc-sheet-title">Combinar com um irrigador tradicional</span>
+          <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
+        </div>
+
+        <p className="yc-field-hint" style={{ marginTop: 0 }}>
+          Pra quem já tem um controlador de irrigação tradicional (ex: Rain Bird ESP-TM2) e quer manter a
+          programação dele funcionando, só adicionando a possibilidade de abrir a válvula remotamente
+          por este app.
+        </p>
+
+        <div className="yc-guide-list">
+          {GUIA_TRADICIONAL_PASSOS.map((passo, i) => (
+            <div className="yc-guide-step" key={i}>
+              <span className="yc-guide-num">{i + 1}</span>
+              <div>
+                <p className="yc-guide-titulo">{passo.titulo}</p>
+                <p className="yc-guide-texto">{passo.texto}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="yc-field-hint" style={{ color: COLORS.alert, marginTop: 4 }}>
+          Fiação de 24V AC mal feita pode danificar o controlador antigo ou causar curto-circuito. Siga as
+          normas elétricas locais e, na dúvida, contrate um eletricista - o mesmo cuidado que o manual do
+          fabricante do irrigador recomenda.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvatar }) {
   const [editingDevice, setEditingDevice] = useState(null);
   const [editingFarm, setEditingFarm] = useState(false);
   const [showGatewayToken, setShowGatewayToken] = useState(false);
   const [showNovoDispositivoGuia, setShowNovoDispositivoGuia] = useState(false);
+  const [showGuiaTradicional, setShowGuiaTradicional] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const avatarInputRef = useRef(null);
@@ -613,6 +682,16 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
         <div className="yc-card-info">
           <span className="yc-card-title" style={{ display: "block" }}>Adicionar um novo dispositivo de campo</span>
           <span className="yc-card-loc">Passo a passo pra configurar sozinho</span>
+        </div>
+        <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
+      </button>
+      <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setShowGuiaTradicional(true)}>
+        <div className="yc-card-icon" style={{ background: `${COLORS.forest}1A`, color: COLORS.forest }}>
+          <Zap size={17} strokeWidth={1.8} />
+        </div>
+        <div className="yc-card-info">
+          <span className="yc-card-title" style={{ display: "block" }}>Combinar com um irrigador tradicional</span>
+          <span className="yc-card-loc">Rain Bird e semelhantes, mantendo a programação original</span>
         </div>
         <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
       </button>
@@ -701,6 +780,7 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
 
       {showGatewayToken && <GatewayTokenSheet onClose={() => setShowGatewayToken(false)} />}
       {showNovoDispositivoGuia && <NovoDispositivoGuiaSheet onClose={() => setShowNovoDispositivoGuia(false)} />}
+      {showGuiaTradicional && <GuiaControladorTradicionalSheet onClose={() => setShowGuiaTradicional(false)} />}
     </div>
   );
 }
