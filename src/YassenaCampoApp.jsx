@@ -493,10 +493,79 @@ function GatewayTokenSheet({ onClose }) {
   );
 }
 
+/* ---------------------------------------------------------
+   Guia — como adicionar um novo dispositivo de campo (placa
+   já instalada/ligada por um técnico; daqui em diante é
+   autoatendimento do produtor, sem precisar de código).
+--------------------------------------------------------- */
+const GUIA_PASSOS = [
+  {
+    titulo: "Ajuste o setor na placa nova",
+    texto: 'Antes de ligar, vire as 4 chavinhas (DIP switch) da placa de Campo conforme o número do setor que ela vai ocupar. Use a tabela abaixo como referência.',
+  },
+  {
+    titulo: 'Cadastre o dispositivo',
+    texto: 'No Mapa, toque em "+", dê um nome, escolha o tipo (sensor ou válvula) e capture a localização em pé perto da placa. Toque em Salvar.',
+  },
+  {
+    titulo: "Informe o mesmo setor no app",
+    texto: 'Em Ajustes, toque no dispositivo recém-criado e preencha "Setor" com o mesmo número configurado nas chavinhas (e "Válvula (nº)", se for o caso). Salve.',
+  },
+  {
+    titulo: "Ligue a placa",
+    texto: "Ela entra na rede LoRa nesse setor sozinha. Em até 1 minuto os dados começam a aparecer no cartão do dispositivo — nada mais precisa ser feito.",
+  },
+];
+
+function NovoDispositivoGuiaSheet({ onClose }) {
+  const [showDipGuide, setShowDipGuide] = useState(false);
+
+  return (
+    <div className="yc-sheet-backdrop" onClick={onClose}>
+      <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="yc-sheet-handle" />
+        <div className="yc-sheet-head">
+          <span className="yc-sheet-title">Adicionar um novo dispositivo de campo</span>
+          <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
+        </div>
+
+        <p className="yc-field-hint" style={{ marginTop: 0 }}>
+          Vale pra uma placa de Campo nova (sensor ou válvula) que já chegou pronta — sem precisar de
+          ajuda técnica nem regravar nada.
+        </p>
+
+        <div className="yc-guide-list">
+          {GUIA_PASSOS.map((passo, i) => (
+            <div className="yc-guide-step" key={i}>
+              <span className="yc-guide-num">{i + 1}</span>
+              <div>
+                <p className="yc-guide-titulo">{passo.titulo}</p>
+                <p className="yc-guide-texto">{passo.texto}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="yc-linklike"
+          style={{ marginTop: 4, fontSize: 12 }}
+          onClick={() => setShowDipGuide(true)}
+        >
+          Ver tabela de chaves por setor
+        </button>
+      </div>
+
+      {showDipGuide && <DipSwitchGuideSheet onClose={() => setShowDipGuide(false)} />}
+    </div>
+  );
+}
+
 function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvatar }) {
   const [editingDevice, setEditingDevice] = useState(null);
   const [editingFarm, setEditingFarm] = useState(false);
   const [showGatewayToken, setShowGatewayToken] = useState(false);
+  const [showNovoDispositivoGuia, setShowNovoDispositivoGuia] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const avatarInputRef = useRef(null);
@@ -535,6 +604,18 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
           <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
         </button>
       ))}
+
+      <div className="yc-section-label" style={{ marginTop: 18 }}>Ajuda</div>
+      <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setShowNovoDispositivoGuia(true)}>
+        <div className="yc-card-icon" style={{ background: `${COLORS.forest}1A`, color: COLORS.forest }}>
+          <HelpCircle size={17} strokeWidth={1.8} />
+        </div>
+        <div className="yc-card-info">
+          <span className="yc-card-title" style={{ display: "block" }}>Adicionar um novo dispositivo de campo</span>
+          <span className="yc-card-loc">Passo a passo pra configurar sozinho</span>
+        </div>
+        <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
+      </button>
 
       <div className="yc-section-label" style={{ marginTop: 18 }}>Gateway</div>
       <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setShowGatewayToken(true)}>
@@ -619,6 +700,7 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
       )}
 
       {showGatewayToken && <GatewayTokenSheet onClose={() => setShowGatewayToken(false)} />}
+      {showNovoDispositivoGuia && <NovoDispositivoGuiaSheet onClose={() => setShowNovoDispositivoGuia(false)} />}
     </div>
   );
 }
@@ -2027,6 +2109,16 @@ export default function YassenaCampoApp() {
         }
         .yc-dip-chip.on{ background:${COLORS.forestMid}1A; color:${COLORS.forestMid}; }
         .yc-dip-chip.off{ background:rgba(20,33,20,0.06); color:${COLORS.inkSoft}; }
+
+        .yc-guide-list{ display:flex; flex-direction:column; gap:14px; margin-top:6px; }
+        .yc-guide-step{ display:flex; gap:10px; align-items:flex-start; }
+        .yc-guide-num{
+          flex-shrink:0; width:22px; height:22px; border-radius:999px; display:flex;
+          align-items:center; justify-content:center; font-size:11.5px; font-weight:700;
+          background:${COLORS.gold}; color:${COLORS.forestDeep}; font-family:'Space Grotesk',sans-serif;
+        }
+        .yc-guide-titulo{ margin:0; font-size:13px; font-weight:600; color:${COLORS.ink}; }
+        .yc-guide-texto{ margin:2px 0 0; font-size:11.5px; color:${COLORS.inkSoft}; line-height:1.5; }
 
         .yc-save-btn{
           width:100%; margin-top:18px; background:${COLORS.gold}; color:${COLORS.forestDeep};
