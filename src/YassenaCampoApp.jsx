@@ -8,7 +8,7 @@ import {
   Sun, X, Map as MapIcon, Plus, LocateFixed, Loader2, CloudSun, Navigation,
   User, Building2, Mail, Lock, Eye, EyeOff, Phone, Ruler, Sprout,
   CheckSquare, Square, LogOut, ArrowRight, ArrowLeft, ShieldCheck, RefreshCw, Trash2, Lightbulb,
-  HelpCircle, Calendar, Camera, Power,
+  HelpCircle, Calendar, Camera, Power, Wifi,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient";
 import { signUp, signIn, signOut, resendConfirmation, fetchProfile, updateProfile, uploadAvatar, authErrorMessage } from "./lib/auth";
@@ -684,6 +684,62 @@ function GuiaBombaSheet({ onClose }) {
   );
 }
 
+/* ---------------------------------------------------------
+   Guia — trocar o WiFi da Base (mudou de lugar, trocou a
+   senha do roteador). A Base cria sua propria rede temporaria
+   com uma pagina de configuracao - nao precisa de PlatformIO
+   nem de regravar nada.
+--------------------------------------------------------- */
+const GUIA_WIFI_PASSOS = [
+  {
+    titulo: "Segure o botão PRG da placa Base ao ligar",
+    texto: 'É o botão marcado "PRG" perto do conector USB-C. Ligue a placa segurando esse botão por uns 2 segundos - isso apaga o WiFi salvo e força a tela de configuração a aparecer, mesmo que a rede antiga ainda funcione.',
+  },
+  {
+    titulo: 'No celular, conecte na rede "Yassena-Base-Setup"',
+    texto: 'A placa vira um ponto de acesso próprio por alguns minutos. Nas configurações de WiFi do celular, procure a rede "Yassena-Base-Setup" e conecte (senha: yassena123).',
+  },
+  {
+    titulo: "Escolha o WiFi novo e a senha",
+    texto: "Uma tela de configuração deve abrir sozinha (se não abrir, abra o navegador e acesse 192.168.4.1). Escolha a rede WiFi nova da lista, digite a senha e salve.",
+  },
+  {
+    titulo: "A Base reinicia e conecta sozinha",
+    texto: "Em poucos segundos a placa sai do modo de configuração e conecta na rede nova - os dados voltam a aparecer no app normalmente, sem precisar mexer em código nem usar computador.",
+  },
+];
+
+function GuiaWifiSheet({ onClose }) {
+  return (
+    <div className="yc-sheet-backdrop" onClick={onClose}>
+      <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="yc-sheet-handle" />
+        <div className="yc-sheet-head">
+          <span className="yc-sheet-title">Trocar o WiFi da Base</span>
+          <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
+        </div>
+
+        <p className="yc-field-hint" style={{ marginTop: 0 }}>
+          Use isso quando a placa Base mudar de lugar ou a senha do roteador mudar - não precisa de
+          computador nem de ajuda técnica.
+        </p>
+
+        <div className="yc-guide-list">
+          {GUIA_WIFI_PASSOS.map((passo, i) => (
+            <div className="yc-guide-step" key={i}>
+              <span className="yc-guide-num">{i + 1}</span>
+              <div>
+                <p className="yc-guide-titulo">{passo.titulo}</p>
+                <p className="yc-guide-texto">{passo.texto}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvatar }) {
   const [editingDevice, setEditingDevice] = useState(null);
   const [editingFarm, setEditingFarm] = useState(false);
@@ -691,6 +747,7 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
   const [showNovoDispositivoGuia, setShowNovoDispositivoGuia] = useState(false);
   const [showGuiaTradicional, setShowGuiaTradicional] = useState(false);
   const [showGuiaBomba, setShowGuiaBomba] = useState(false);
+  const [showGuiaWifi, setShowGuiaWifi] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const avatarInputRef = useRef(null);
@@ -758,6 +815,16 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
         <div className="yc-card-info">
           <span className="yc-card-title" style={{ display: "block" }}>Bomba automática por nível de reservatório</span>
           <span className="yc-card-loc">Liga e desliga sozinha, sem depender da internet</span>
+        </div>
+        <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
+      </button>
+      <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setShowGuiaWifi(true)}>
+        <div className="yc-card-icon" style={{ background: `${COLORS.forest}1A`, color: COLORS.forest }}>
+          <Wifi size={17} strokeWidth={1.8} />
+        </div>
+        <div className="yc-card-info">
+          <span className="yc-card-title" style={{ display: "block" }}>Trocar o WiFi da Base</span>
+          <span className="yc-card-loc">Mudou de lugar ou trocou a senha do roteador</span>
         </div>
         <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
       </button>
@@ -848,6 +915,7 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
       {showNovoDispositivoGuia && <NovoDispositivoGuiaSheet onClose={() => setShowNovoDispositivoGuia(false)} />}
       {showGuiaTradicional && <GuiaControladorTradicionalSheet onClose={() => setShowGuiaTradicional(false)} />}
       {showGuiaBomba && <GuiaBombaSheet onClose={() => setShowGuiaBomba(false)} />}
+      {showGuiaWifi && <GuiaWifiSheet onClose={() => setShowGuiaWifi(false)} />}
     </div>
   );
 }
