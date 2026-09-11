@@ -413,8 +413,9 @@ function AlertasScreen() {
 }
 
 /* ---------------------------------------------------------
-   Token do gateway (Base) — configurado uma única vez no firmware,
-   usado pela Base pra buscar sozinha o pareamento setor -> dispositivo.
+   Token do gateway (Base) — cole no portal de configuração da placa
+   (mesma tela do WiFi, "Trocar o WiFi ou o token" em Ajuda), usado pela
+   Base pra buscar sozinha o pareamento setor -> dispositivo.
 --------------------------------------------------------- */
 function GatewayTokenSheet({ onClose }) {
   const [token, setToken] = useState(null);
@@ -466,9 +467,11 @@ function GatewayTokenSheet({ onClose }) {
         </div>
 
         <p className="yc-field-hint" style={{ marginTop: 0 }}>
-          Cole esse token uma única vez no firmware da placa Base (gateway com Wi-Fi). Com ele, a Base
-          busca sozinha, periodicamente, qual dispositivo recebe os dados de cada setor — sempre que você
-          mudar o "Setor" de um dispositivo em Ajustes, a Base atualiza sem precisar de código novo.
+          Cole esse token no portal de configuração da placa Base (segure o botão PRG ao ligar, veja o
+          guia "Trocar o WiFi ou o token" em Ajuda). Com ele, a Base busca sozinha, periodicamente, qual
+          dispositivo recebe os dados de cada setor — sempre que você mudar o "Setor" de um dispositivo
+          em Ajustes, a Base atualiza sem precisar de código novo. Se você gerar um token novo aqui,
+          lembre de colar ele na placa de novo, senão ela para de conseguir falar com o app.
         </p>
 
         {loading ? (
@@ -693,19 +696,19 @@ function GuiaBombaSheet({ onClose }) {
 const GUIA_WIFI_PASSOS = [
   {
     titulo: "Segure o botão PRG da placa Base ao ligar",
-    texto: 'É o botão marcado "PRG" perto do conector USB-C. Ligue a placa segurando esse botão por uns 2 segundos - isso apaga o WiFi salvo e força a tela de configuração a aparecer, mesmo que a rede antiga ainda funcione.',
+    texto: 'É o botão marcado "PRG" perto do conector USB-C. Ligue a placa segurando esse botão por uns 2 segundos - isso abre a tela de configuração, mesmo que a rede e o token salvos ainda funcionem (nada é apagado até você salvar algo novo).',
   },
   {
     titulo: 'No celular, conecte na rede "Yassena-Base-Setup"',
     texto: 'A placa vira um ponto de acesso próprio por alguns minutos. Nas configurações de WiFi do celular, procure a rede "Yassena-Base-Setup" e conecte (senha: yassena123).',
   },
   {
-    titulo: "Escolha o WiFi novo e a senha",
-    texto: "Uma tela de configuração deve abrir sozinha (se não abrir, abra o navegador e acesse 192.168.4.1). Escolha a rede WiFi nova da lista, digite a senha e salve.",
+    titulo: "Escolha o WiFi novo e cole o token do gateway",
+    texto: 'Uma tela de configuração deve abrir sozinha (se não abrir, abra o navegador e acesse 192.168.4.1). Escolha a rede WiFi nova, digite a senha, e no campo "Token do gateway" cole o valor que aparece em Ajustes > Gateway no app - dá pra atualizar os dois de uma vez, ou só um deles.',
   },
   {
     titulo: "A Base reinicia e conecta sozinha",
-    texto: "Em poucos segundos a placa sai do modo de configuração e conecta na rede nova - os dados voltam a aparecer no app normalmente, sem precisar mexer em código nem usar computador.",
+    texto: "Em poucos segundos a placa sai do modo de configuração e conecta na rede nova com o token novo - os dados voltam a aparecer no app normalmente, sem precisar mexer em código nem usar computador.",
   },
 ];
 
@@ -715,13 +718,13 @@ function GuiaWifiSheet({ onClose }) {
       <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="yc-sheet-handle" />
         <div className="yc-sheet-head">
-          <span className="yc-sheet-title">Trocar o WiFi da Base</span>
+          <span className="yc-sheet-title">Trocar o WiFi ou o token da Base</span>
           <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
         </div>
 
         <p className="yc-field-hint" style={{ marginTop: 0 }}>
-          Use isso quando a placa Base mudar de lugar ou a senha do roteador mudar - não precisa de
-          computador nem de ajuda técnica.
+          Use isso quando a placa Base mudar de lugar, a senha do roteador mudar, ou o token do
+          gateway mudar (veja em Ajustes {'>'} Gateway) - não precisa de computador nem de ajuda técnica.
         </p>
 
         <div className="yc-guide-list">
@@ -823,8 +826,8 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
           <Wifi size={17} strokeWidth={1.8} />
         </div>
         <div className="yc-card-info">
-          <span className="yc-card-title" style={{ display: "block" }}>Trocar o WiFi da Base</span>
-          <span className="yc-card-loc">Mudou de lugar ou trocou a senha do roteador</span>
+          <span className="yc-card-title" style={{ display: "block" }}>Trocar o WiFi ou o token da Base</span>
+          <span className="yc-card-loc">Mudou de lugar, trocou a senha, ou trocou o token do gateway</span>
         </div>
         <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
       </button>
