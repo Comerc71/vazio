@@ -50,7 +50,7 @@ const DEVICE_TYPES = [
   { id: "umidade", label: "Umidade do solo", icon: Droplets },
   { id: "silo", label: "Nível de silo / reservatório", icon: Wheat },
   { id: "cerca", label: "Cerca elétrica", icon: Zap },
-  { id: "bomba", label: "Bomba / energia solar", icon: Sun },
+  { id: "bomba", label: "Bomba (nível de reservatório)", icon: Sun },
   { id: "clima", label: "Estação meteorológica", icon: CloudSun },
   { id: "valvula", label: "Válvula / irrigação", icon: Power },
   { id: "outro", label: "Outro sensor RF", icon: RadioTower },
@@ -629,12 +629,68 @@ function GuiaControladorTradicionalSheet({ onClose }) {
   );
 }
 
+/* ---------------------------------------------------------
+   Guia — bomba automática por nível de reservatório (par
+   sensor de nível + nó bomba, que conversam direto por LoRa,
+   sem depender da Base/nuvem para a decisão de ligar/desligar).
+--------------------------------------------------------- */
+const GUIA_BOMBA_PASSOS = [
+  {
+    titulo: "São duas placas, com um único número em comum",
+    texto: 'Uma placa "sensor de nível" fica no reservatório (ligada a uma chave-boia) e uma placa "nó bomba" fica na motobomba. As duas são configuradas com o MESMO número no DIP switch - esse número identifica o par, igual ao setor de uma válvula.',
+  },
+  {
+    titulo: "A decisão de ligar/desligar não passa pelo app",
+    texto: "O nó bomba liga e desliga o relé sozinho, direto pelo rádio, assim que ouve o sensor - continua funcionando mesmo se a internet ou a Base caírem. O app só mostra o status quando a Base estiver por perto, é monitoramento, não controle.",
+  },
+  {
+    titulo: "Cadastre só UM dispositivo no app, tipo Bomba",
+    texto: 'No Mapa, cadastre um dispositivo do tipo "Bomba (nível de reservatório)" e, em Ajustes, preencha o "Setor" com o mesmo número configurado nas duas placas. Não precisa cadastrar o sensor separadamente.',
+  },
+  {
+    titulo: "O cartão mostra Ligada/Desligada e o nível",
+    texto: 'Depois de pareado, o cartão desse dispositivo no Painel mostra "Ligada" ou "Desligada" e, embaixo, se o reservatório está com nível baixo ou cheio. Se aparecer "Sem sinal", o nó bomba ficou tempo demais sem ouvir o sensor e desligou por segurança.',
+  },
+];
+
+function GuiaBombaSheet({ onClose }) {
+  return (
+    <div className="yc-sheet-backdrop" onClick={onClose}>
+      <div className="yc-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="yc-sheet-handle" />
+        <div className="yc-sheet-head">
+          <span className="yc-sheet-title">Bomba automática por nível de reservatório</span>
+          <button className="yc-icon-btn" onClick={onClose} aria-label="Fechar"><X size={16} /></button>
+        </div>
+
+        <p className="yc-field-hint" style={{ marginTop: 0 }}>
+          Liga e desliga a motobomba sozinha conforme o nível do reservatório, sem precisar de internet
+          pra funcionar - o app só acompanha o status.
+        </p>
+
+        <div className="yc-guide-list">
+          {GUIA_BOMBA_PASSOS.map((passo, i) => (
+            <div className="yc-guide-step" key={i}>
+              <span className="yc-guide-num">{i + 1}</span>
+              <div>
+                <p className="yc-guide-titulo">{passo.titulo}</p>
+                <p className="yc-guide-texto">{passo.texto}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvatar }) {
   const [editingDevice, setEditingDevice] = useState(null);
   const [editingFarm, setEditingFarm] = useState(false);
   const [showGatewayToken, setShowGatewayToken] = useState(false);
   const [showNovoDispositivoGuia, setShowNovoDispositivoGuia] = useState(false);
   const [showGuiaTradicional, setShowGuiaTradicional] = useState(false);
+  const [showGuiaBomba, setShowGuiaBomba] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const avatarInputRef = useRef(null);
@@ -692,6 +748,16 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
         <div className="yc-card-info">
           <span className="yc-card-title" style={{ display: "block" }}>Combinar com um irrigador tradicional</span>
           <span className="yc-card-loc">Rain Bird e semelhantes, mantendo a programação original</span>
+        </div>
+        <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
+      </button>
+      <button className="yc-card yc-alert-item yc-alert-item-btn" onClick={() => setShowGuiaBomba(true)}>
+        <div className="yc-card-icon" style={{ background: `${COLORS.forest}1A`, color: COLORS.forest }}>
+          <Droplets size={17} strokeWidth={1.8} />
+        </div>
+        <div className="yc-card-info">
+          <span className="yc-card-title" style={{ display: "block" }}>Bomba automática por nível de reservatório</span>
+          <span className="yc-card-loc">Liga e desliga sozinha, sem depender da internet</span>
         </div>
         <ChevronRight size={16} style={{ marginLeft: 8, color: COLORS.inkSoft }} />
       </button>
@@ -781,6 +847,7 @@ function AjustesScreen({ devices, user, onLogout, onUpdateProfile, onUploadAvata
       {showGatewayToken && <GatewayTokenSheet onClose={() => setShowGatewayToken(false)} />}
       {showNovoDispositivoGuia && <NovoDispositivoGuiaSheet onClose={() => setShowNovoDispositivoGuia(false)} />}
       {showGuiaTradicional && <GuiaControladorTradicionalSheet onClose={() => setShowGuiaTradicional(false)} />}
+      {showGuiaBomba && <GuiaBombaSheet onClose={() => setShowGuiaBomba(false)} />}
     </div>
   );
 }
