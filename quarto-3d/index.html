@@ -1,0 +1,510 @@
+<title>Quarto Petróleo 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: palco 3D em tela cheia à esquerda, painel de controle tipo "quadro de luz" à direita (empilha no celular). */
+/* Tema único escuro por escolha: o quarto é mostrado à noite, com as luzes em destaque. */
+:root{
+  --ink:#0f1719;        /* fundo do palco */
+  --panel:#151f22;      /* painel */
+  --line:#26363a;       /* divisórias */
+  --text:#ebe5dc;       /* texto principal */
+  --muted:#93a3a3;      /* texto secundário */
+  --amber:#e9a35e;      /* destaque: cor da fita LED */
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+html,body{height:100%}
+body{background:var(--ink);color:var(--text);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:100%}
+.stage{position:relative;min-height:0;background:radial-gradient(120% 90% at 40% 30%,#1a2629 0%,var(--ink) 70%)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none}
+.hint{position:absolute;left:max(16px, env(safe-area-inset-left, 0px));bottom:14px;font:500 11px/1.4 var(--f-mono);color:var(--muted);letter-spacing:.04em;background:rgba(15,23,25,.7);padding:6px 10px;border-radius:6px;pointer-events:none}
+.views{position:absolute;left:max(16px, env(safe-area-inset-left, 0px));top:14px;right:16px;display:flex;flex-wrap:wrap;gap:6px}
+.views button{font:500 12px var(--f-body);color:var(--text);background:rgba(21,31,34,.82);border:1px solid var(--line);padding:6px 11px;border-radius:999px;cursor:pointer;backdrop-filter:blur(6px)}
+.views button[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.panel{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding-block:22px 28px;padding-left:max(20px, env(safe-area-inset-left, 0px));padding-right:max(20px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:26px}
+.eyebrow{font:500 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
+h1{font:700 30px/1.05 var(--f-display);margin:6px 0 8px;text-wrap:balance;letter-spacing:-.01em}
+h2{font:600 12px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.lede{color:var(--muted);margin:0;max-width:60ch}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stats div{border-top:1px solid var(--line);padding-top:6px}
+.stats b{display:block;font:500 17px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--text)}
+.stats span{font-size:11px;color:var(--muted)}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.presets button{font:500 12.5px var(--f-body);color:var(--text);background:#1b282b;border:1px solid var(--line);border-radius:8px;padding:9px 6px;cursor:pointer;text-align:center}
+.presets button small{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
+.presets button[aria-pressed="true"]{border-color:var(--amber);background:#2a2620}
+button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.lights{display:flex;flex-direction:column;gap:4px}
+.light{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.light .name{font-weight:600}
+.light .where{display:block;font-size:11.5px;color:var(--muted)}
+.light input[type=range]{grid-column:1 / -1;width:100%;accent-color:var(--amber)}
+.light input[type=color]{width:34px;height:26px;border:1px solid var(--line);border-radius:6px;background:none;padding:2px;cursor:pointer}
+.sw{position:relative;width:38px;height:22px;flex:none}
+.sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:999px;background:#2b3a3e;transition:background .2s}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#c9cfcf;transition:transform .2s}
+.sw input:checked + span{background:var(--amber)}
+.sw input:checked + span::after{transform:translateX(16px);background:#fff}
+.sw input:focus-visible + span{outline:2px solid var(--amber);outline-offset:2px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
+.row input[type=range]{flex:1;accent-color:var(--amber)}
+.plan{overflow-x:auto}
+.plan svg{width:100%;max-width:340px;height:auto;display:block}
+.plan text{font-family:var(--f-mono);fill:var(--muted)}
+.ideas{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.ideas li{display:grid;grid-template-columns:52px 1fr;gap:10px}
+.ideas b{font:500 12px var(--f-mono);color:var(--amber);font-variant-numeric:tabular-nums}
+.ideas p{margin:0;color:var(--text)}
+.ideas p span{color:var(--muted)}
+@media (max-width:860px){
+  html,body{height:auto}
+  .app{grid-template-columns:1fr;grid-template-rows:62vh auto;height:auto}
+  .panel{border-left:0;border-top:1px solid var(--line);overflow:visible}
+}
+@media (prefers-reduced-motion:reduce){.sw span,.sw span::after{transition:none}}
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="views" id="views">
+      <button data-v="persp" aria-pressed="true">Perspectiva</button>
+      <button data-v="plan">Planta</button>
+      <button data-v="door">Da porta</button>
+      <button data-v="vanity">Penteadeira</button>
+      <button data-v="bed">Deitado na cama</button>
+    </div>
+    <div class="hint">Arraste para girar · pinça/scroll para zoom · botão direito para mover</div>
+  </div>
+
+  <aside class="panel">
+    <header>
+      <div class="eyebrow">Projeto 3D · 3,00 × 2,65 m · 7,95 m²</div>
+      <h1>Quarto Petróleo</h1>
+      <p class="lede">Cama de casal com cabeceira ripada que já incorpora os criados-mudos suspensos, sua penteadeira de 109 × 40 cm com espelho camarim na parede lateral, e seis circuitos de luz que você controla aqui.</p>
+      <div class="stats">
+        <div><b>77 cm</b><span>cama ↔ penteadeira</span></div>
+        <div><b>72 cm</b><span>pé da cama ↔ parede</span></div>
+        <div><b>≈4,8 m²</b><span>de piso livre</span></div>
+      </div>
+    </header>
+
+    <section>
+      <h2>Cenas de luz</h2>
+      <div class="presets" id="presets">
+        <button data-p="relax">Relax<small>indireta quente</small></button>
+        <button data-p="leitura">Leitura<small>pendentes</small></button>
+        <button data-p="maquiagem">Maquiagem<small>camarim + teto</small></button>
+        <button data-p="cinema">Cinema RGB<small>cores animadas</small></button>
+        <button data-p="dia">Dia<small>luz natural</small></button>
+        <button data-p="noite">Noite<small>só sob a cama</small></button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Circuitos</h2>
+      <div class="lights" id="lights"></div>
+      <div class="row"><label for="nat">Luz natural (janela)</label><input type="range" id="nat" min="0" max="1" step="0.01"></div>
+      <div class="row"><label for="rgb">Ciclo RGB nas fitas de LED</label><span class="sw"><input type="checkbox" id="rgb"><span></span></span></div>
+    </section>
+
+    <section>
+      <h2>Planta baixa · medidas em cm</h2>
+      <div class="plan">
+        <svg viewBox="-34 -30 372 340" role="img" aria-label="Planta baixa do quarto com medidas">
+          <rect x="0" y="0" width="300" height="265" fill="#1b282b" stroke="#93a3a3" stroke-width="3"/>
+          <!-- janela parede esquerda -->
+          <line x1="0" y1="105" x2="0" y2="205" stroke="#8fc3dd" stroke-width="5"/>
+          <!-- cabeceira -->
+          <rect x="0" y="0" width="230" height="5" fill="#a77a52"/>
+          <!-- criados suspensos -->
+          <rect x="3" y="5" width="37" height="35" fill="#6d5443" stroke="#a77a52"/>
+          <rect x="188" y="5" width="37" height="35" fill="#6d5443" stroke="#a77a52"/>
+          <!-- cama -->
+          <rect x="45" y="5" width="138" height="188" rx="3" fill="#2f3d40" stroke="#ebe5dc" stroke-width="1.2"/>
+          <rect x="55" y="14" width="54" height="30" rx="4" fill="#4a585b"/>
+          <rect x="119" y="14" width="54" height="30" rx="4" fill="#4a585b"/>
+          <text x="114" y="120" text-anchor="middle" font-size="10" style="fill:#ebe5dc">cama 138 × 188</text>
+          <!-- penteadeira -->
+          <rect x="260" y="115" width="40" height="109" fill="#3a3530" stroke="#e9a35e" stroke-width="1.2"/>
+          <text x="280" y="172" text-anchor="middle" font-size="8.5" transform="rotate(-90 280 172)" style="fill:#e9a35e">penteadeira 109 × 40</text>
+          <circle cx="242" cy="170" r="20" fill="none" stroke="#c48b8b" stroke-dasharray="3 2"/>
+          <!-- TV e porta de correr -->
+          <rect x="58" y="261" width="97" height="4" fill="#ebe5dc"/>
+          <text x="106" y="254" text-anchor="middle" font-size="8">TV 43"</text>
+          <line x1="160" y1="261" x2="240" y2="261" stroke="#e9a35e" stroke-width="3"/>
+          <line x1="160" y1="257" x2="250" y2="257" stroke="#93a3a3" stroke-width="1" stroke-dasharray="4 3"/>
+          <text x="200" y="250" text-anchor="middle" font-size="8">porta de correr 80</text>
+          <!-- cotas -->
+          <line x1="0" y1="-16" x2="300" y2="-16" stroke="#93a3a3"/>
+          <text x="150" y="-21" text-anchor="middle" font-size="10">300</text>
+          <line x1="-18" y1="0" x2="-18" y2="265" stroke="#93a3a3"/>
+          <text x="-23" y="132" text-anchor="middle" font-size="10" transform="rotate(-90 -23 132)">265</text>
+          <line x1="183" y1="150" x2="260" y2="150" stroke="#e9a35e" stroke-dasharray="2 2"/>
+          <text x="221" y="145" text-anchor="middle" font-size="9" style="fill:#e9a35e">77</text>
+          <line x1="114" y1="193" x2="114" y2="261" stroke="#e9a35e" stroke-dasharray="2 2"/>
+          <text x="120" y="230" font-size="9" style="fill:#e9a35e">72</text>
+          <line x1="0" y1="80" x2="45" y2="80" stroke="#93a3a3" stroke-dasharray="2 2"/>
+          <text x="22" y="75" text-anchor="middle" font-size="9">45</text>
+          <text x="150" y="298" text-anchor="middle" font-size="9">área 7,95 m²</text>
+        </svg>
+      </div>
+    </section>
+
+    <section>
+      <h2>Ideias do projeto</h2>
+      <ul class="ideas">
+        <li><b>230 cm</b><p>Cabeceira ripada estendida até os criados-mudos. <span>Unifica a parede, e os criados suspensos deixam o piso livre e fácil de limpar.</span></p></li>
+        <li><b>baú</b><p>Cama box baú. <span>Guarda roupa de cama, malas e itens de outra estação sem ocupar área.</span></p></li>
+        <li><b>109×40</b><p>Penteadeira na parede lateral com espelho camarim. <span>O puff entra embaixo do tampo quando não está em uso e libera os 77 cm de passagem.</span></p></li>
+        <li><b>0,5 m²</b><p>Porta de correr aparente. <span>É a área que uma porta de abrir de 80 cm varreria. Aqui ela ficaria a poucos centímetros do pé da cama.</span></p></li>
+        <li><b>pendente</b><p>Pendentes no lugar de abajures. <span>Os criados ficam livres para celular e livro, e a luz de leitura não ofusca quem dorme ao lado.</span></p></li>
+        <li><b>1 parede</b><p>Só a parede da cabeceira em azul-petróleo. <span>As outras três em off-white quente, que rebate a luz e faz o quarto parecer maior.</span></p></li>
+        <li><b>2700 K</b><p>Fitas LED quentes para dormir, 4000 K no camarim. <span>Se quiser cores, use fitas RGBW com controle Wi-Fi ou por app, que mantêm um branco de verdade.</span></p></li>
+      </ul>
+    </section>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+(function(){
+const W=3.00, D=2.65, H=2.60;            // quarto em metros: 3,00 × 2,65 = 7,95 m²
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(48,1,0.05,60);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.minDistance=0.4; controls.maxDistance=12;
+
+let composer=null, bloom=null;
+if(THREE.EffectComposer && THREE.UnrealBloomPass){
+  composer=new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene,camera));
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(512,512),0.55,0.5,0.9);
+  composer.addPass(bloom);
+}
+
+/* ---------- helpers ---------- */
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.8,metalness:0},o));
+function bx(x0,x1,y0,y1,z0,z1,m,parent=scene,shadow=true){
+  const me=new THREE.Mesh(new THREE.BoxGeometry(x1-x0,y1-y0,z1-z0),m);
+  me.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);
+  me.castShadow=shadow; me.receiveShadow=true; parent.add(me); return me;
+}
+function cyl(r,h,x,y,z,m,parent=scene,seg=24){
+  const me=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),m);
+  me.position.set(x,y,z); me.castShadow=true; me.receiveShadow=true; parent.add(me); return me;
+}
+function sph(r,x,y,z,m,parent=scene){
+  const me=new THREE.Mesh(new THREE.SphereGeometry(r,20,14),m);
+  me.position.set(x,y,z); parent.add(me); return me;
+}
+function canvasTex(w,h,draw){
+  const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h);
+  const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
+}
+
+/* ---------- materiais ---------- */
+const floorTex=canvasTex(512,512,(g,w,h)=>{
+  const tones=['#8a6646','#94704f','#7f5d40','#9a7655','#866243'];
+  const pw=64;
+  for(let i=0;i<w/pw;i++){
+    let y=-(i*97)%180;
+    while(y<h){ const len=150+((i*37+y)%90);
+      g.fillStyle=tones[(i+Math.abs(y))%tones.length]; g.fillRect(i*pw,y,pw-2,len-2);
+      g.strokeStyle='rgba(60,40,25,.18)';
+      for(let k=0;k<5;k++){g.beginPath();g.moveTo(i*pw+6+k*11,y);g.lineTo(i*pw+10+k*11,y+len);g.stroke();}
+      y+=len; }
+  }
+});
+floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping; floorTex.repeat.set(2.2,2.2);
+const artTex=canvasTex(512,360,(g,w,h)=>{
+  g.fillStyle='#e9e1d4'; g.fillRect(0,0,w,h);
+  g.fillStyle='#c9875a'; g.beginPath(); g.arc(w*.38,h*.62,120,Math.PI,0); g.fill();
+  g.fillStyle='#3f5a5e'; g.beginPath(); g.arc(w*.62,h*.62,90,Math.PI,0); g.fill();
+  g.fillStyle='#d9b77e'; g.beginPath(); g.arc(w*.7,h*.28,34,0,Math.PI*2); g.fill();
+  g.fillStyle='#2b3b3e'; g.fillRect(0,h*.62,w,3);
+});
+
+const M={
+  wall:mat('#e7e1d8',{roughness:.95,shadowSide:THREE.DoubleSide}),
+  accent:mat('#4f676b',{roughness:.95,shadowSide:THREE.DoubleSide}),
+  ceil:mat('#f1ede7',{roughness:1,shadowSide:THREE.DoubleSide}),
+  floor:mat('#ffffff',{map:floorTex,roughness:.6}),
+  slat:mat('#a77a52',{roughness:.6}), slatBack:mat('#3b2b20'),
+  oak:mat('#b88a5e',{roughness:.55}),
+  fabric:mat('#8f877e',{roughness:1}),
+  sheet:mat('#efebe4',{roughness:1}), duvet:mat('#e3ddd2',{roughness:1}),
+  throwM:mat('#6f7f68',{roughness:1}), pillow:mat('#f6f3ee',{roughness:1}), cushion:mat('#c79a6e',{roughness:1}),
+  white:mat('#f3f0ea',{roughness:.45}), gold:mat('#c9a467',{roughness:.3,metalness:.9}),
+  mirror:mat('#c6d0d3',{roughness:.03,metalness:1}),
+  velvet:mat('#b9797c',{roughness:.9}), dark:mat('#202426',{roughness:.6}),
+  tv:mat('#0c0e10',{roughness:.25,metalness:.3,emissive:new THREE.Color('#0b1622'),emissiveIntensity:1}),
+  door:mat('#c7a681',{roughness:.6}), linen:mat('#ddd3c4',{roughness:1,side:THREE.DoubleSide}),
+  glass:mat('#cfe3f2',{emissive:new THREE.Color('#cfe3f2'),emissiveIntensity:.4,roughness:.1}),
+  pot:mat('#d9cbb6',{roughness:.9}), leaf:mat('#4f7a4a',{roughness:.8}),
+  art:new THREE.MeshStandardMaterial({map:artTex,roughness:.9}),
+  book1:mat('#8b4a3c'), book2:mat('#d4c19a'), book3:mat('#3f5a5e')
+};
+
+/* ---------- paredes (somem automaticamente quando estão de costas para a câmera) ---------- */
+const walls=[];
+function plane(w,h,m,pos,rot){
+  const me=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);
+  me.position.copy(pos); me.rotation.set(rot[0],rot[1],rot[2]); me.receiveShadow=true; me.castShadow=true; scene.add(me); return me;
+}
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const floor=plane(W,D,M.floor,V(W/2,0,D/2),[-Math.PI/2,0,0]); floor.castShadow=false;
+function addWall(n,p){const g=new THREE.Group(); scene.add(g); walls.push({n,p,g}); return g;}
+const gBack =addWall(V(0,0,1),V(0,0,0));
+const gFront=addWall(V(0,0,-1),V(0,0,D));
+const gLeft =addWall(V(1,0,0),V(0,0,0));
+const gRight=addWall(V(-1,0,0),V(W,0,0));
+const gCeil =addWall(V(0,-1,0),V(0,H,0));
+plane(W,H,M.accent,V(W/2,H/2,0),[0,0,0]);
+plane(W,H,M.wall,V(W/2,H/2,D),[0,Math.PI,0]);
+plane(D,H,M.wall,V(W,H/2,D/2),[0,-Math.PI/2,0]);
+plane(W,D,M.ceil,V(W/2,H,D/2),[Math.PI/2,0,0]);
+// parede esquerda com vão da janela (z 1,05–2,05 · y 0,95–2,15)
+const wz0=1.05,wz1=2.05,wy0=0.95,wy1=2.15;
+plane(wz0,H,M.wall,V(0,H/2,wz0/2),[0,Math.PI/2,0]);
+plane(D-wz1,H,M.wall,V(0,H/2,(wz1+D)/2),[0,Math.PI/2,0]);
+plane(wz1-wz0,wy0,M.wall,V(0,wy0/2,(wz0+wz1)/2),[0,Math.PI/2,0]);
+plane(wz1-wz0,H-wy1,M.wall,V(0,(wy1+H)/2,(wz0+wz1)/2),[0,Math.PI/2,0]);
+
+/* ---------- luzes configuráveis ---------- */
+const L={
+  teto:     {name:'Plafon central',      where:'luz geral no teto',          color:'#fff3e2', int:.8, on:false, lights:[], mats:[]},
+  cabeceira:{name:'Fita LED cabeceira',  where:'lava a parede de baixo p/ cima', color:'#ff9f55', int:1, on:true, lights:[], mats:[]},
+  sobcama:  {name:'LED sob a cama',      where:'efeito cama flutuante',      color:'#ff7a3d', int:.6, on:true, lights:[], mats:[]},
+  abajur:   {name:'Pendentes laterais',  where:'leitura, um de cada lado',   color:'#ffc98a', int:.35,on:true, lights:[], mats:[]},
+  camarim:  {name:'Espelho camarim',     where:'lâmpadas da penteadeira',    color:'#fff1de', int:.0, on:false, lights:[], mats:[]},
+  sanca:    {name:'Sanca no teto',       where:'LED indireto no perímetro',  color:'#ffb47a', int:.5, on:true, lights:[], mats:[]}
+};
+const base={teto:1.5,cabeceira:1.1,sobcama:1.6,abajur:1.1,camarim:1.4,sanca:.8};
+function pl(key,x,y,z,dist,decay,parent=scene,shadow=false){
+  const l=new THREE.PointLight('#fff',1,dist,decay); l.position.set(x,y,z);
+  if(shadow){l.castShadow=true; l.shadow.mapSize.set(1024,1024); l.shadow.bias=-.003; l.shadow.radius=4;}
+  parent.add(l); L[key].lights.push(l); return l;
+}
+function led(key){const m=mat('#2a2a2a',{roughness:.5,emissive:new THREE.Color('#000')}); L[key].mats.push(m); return m;}
+
+const hemi=new THREE.HemisphereLight('#f4efe8','#3a3330',.15); scene.add(hemi);
+const sun=new THREE.DirectionalLight('#fff4e3',0); sun.position.set(-2.4,2.6,1.9); sun.target.position.set(1.4,0,1.2);
+sun.castShadow=true; sun.shadow.mapSize.set(1024,1024); Object.assign(sun.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:.5,far:9}); sun.shadow.bias=-.002;
+scene.add(sun,sun.target);
+
+/* ---------- cabeceira ripada 2,30 m + quadro ---------- */
+bx(0,2.30,0,1.10,0,.015,M.slatBack,gBack);
+for(let x=.01;x<2.29;x+=.055) bx(x,x+.035,.02,1.10,.015,.042,M.slat,gBack);
+bx(0,2.30,1.10,1.118,0,.045,led('cabeceira'),gBack,false);
+pl('cabeceira',.35,1.22,.12,1.9,1.4); pl('cabeceira',1.15,1.22,.12,1.9,1.4); pl('cabeceira',1.95,1.22,.12,1.9,1.4);
+bx(.69,1.59,1.38,1.98,.0,.03,M.oak,gBack);
+bx(.71,1.57,1.40,1.96,.03,.032,M.art,gBack,false);
+
+/* ---------- cama casal 138 × 188 (box baú) ---------- */
+const bxX0=.45,bxX1=1.83,bxZ0=.05,bxZ1=1.93;
+bx(bxX0+.06,bxX1-.06,0,.06,bxZ0+.06,bxZ1-.06,M.dark);
+bx(bxX0,bxX1,.06,.30,bxZ0,bxZ1,M.fabric);
+bx(bxX0+.1,bxX1-.1,.004,.012,bxZ0+.1,bxZ1-.1,led('sobcama'),scene,false);
+pl('sobcama',bxX0-.04,.05,.6,.9,1.3); pl('sobcama',bxX0-.04,.05,1.5,.9,1.3);
+pl('sobcama',bxX1+.04,.05,.6,.9,1.3); pl('sobcama',bxX1+.04,.05,1.5,.9,1.3);
+pl('sobcama',1.14,.05,bxZ1+.05,.9,1.3);
+bx(bxX0+.01,bxX1-.01,.30,.54,bxZ0+.01,bxZ1-.01,M.sheet);
+bx(bxX0-.015,bxX1+.015,.53,.58,.62,bxZ1+.015,M.duvet);
+bx(bxX0-.02,bxX0-.005,.26,.58,.62,bxZ1+.015,M.duvet);
+bx(bxX1+.005,bxX1+.02,.26,.58,.62,bxZ1+.015,M.duvet);
+bx(bxX0-.03,bxX1+.03,.58,.595,1.42,1.80,M.throwM);
+bx(bxX0-.035,bxX0-.02,.33,.595,1.42,1.80,M.throwM);
+bx(bxX1+.02,bxX1+.035,.33,.595,1.42,1.80,M.throwM);
+[[.82],[1.46]].forEach(([x])=>{const p=bx(x-.30,x+.30,.54,.70,.10,.42,M.pillow); p.rotation.x=-.35;});
+[[.95,M.cushion],[1.33,M.throwM]].forEach(([x,m])=>{const p=bx(x-.2,x+.2,.56,.86,.40,.52,m); p.rotation.x=-.2;});
+
+/* ---------- criados-mudos suspensos + pendentes ---------- */
+[[.03,.40],[1.88,2.25]].forEach(([x0,x1],i)=>{
+  bx(x0,x1,.44,.60,.045,.40,M.oak);
+  bx(x0+.02,x1-.02,.505,.508,.401,.403,M.slatBack,scene,false);
+  const cx=(x0+x1)/2;
+  cyl(.004,H-1.06,cx,(H+1.06)/2,.24,M.dark,gCeil,6);
+  const shade=new THREE.Mesh(new THREE.SphereGeometry(.085,24,16),led('abajur'));
+  shade.position.set(cx,1.0,.24); scene.add(shade);
+  pl('abajur',cx,.94,.26,2.3,1.3);
+  if(i===0){ bx(x0+.06,x0+.26,.60,.63,.12,.30,M.book1); bx(x0+.07,x0+.24,.63,.655,.13,.28,M.book2); }
+  else { cyl(.06,.11,cx+.06,.655,.2,M.pot); sph(.09,cx+.06,.78,.2,M.leaf); }
+});
+
+/* ---------- penteadeira 109 × 40 + espelho camarim ---------- */
+const pz0=1.15,pz1=2.24,px0=2.60;
+bx(px0,W,.74,.77,pz0,pz1,M.white);
+bx(px0+.02,W,.58,.74,pz0,pz1,M.white);
+bx(px0+.015,px0+.02,.6,.72,pz0+.02,pz0+.54,M.white);
+bx(px0+.015,px0+.02,.6,.72,pz0+.55,pz1-.02,M.white);
+bx(px0+.002,px0+.015,.655,.665,pz0+.22,pz0+.34,M.gold,scene,false);
+bx(px0+.002,px0+.015,.655,.665,pz1-.34,pz1-.22,M.gold,scene,false);
+[[px0+.04,pz0+.04],[px0+.04,pz1-.04],[W-.04,pz0+.04],[W-.04,pz1-.04]].forEach(([x,z])=>cyl(.014,.58,x,.29,z,M.gold));
+cyl(.035,.12,2.78,.83,pz0+.15,M.pot); cyl(.025,.08,2.72,.81,pz0+.27,M.gold); sph(.05,2.8,.82,pz1-.18,M.velvet);
+const pmz=(pz0+pz1)/2;
+bx(W-.025,W,.95,1.78,pmz-.40,pmz+.40,M.gold,gRight);
+bx(W-.03,W-.025,.98,1.75,pmz-.37,pmz+.37,M.mirror,gRight,false);
+const bulbM=led('camarim');
+for(let y=1.02;y<=1.72;y+=.14){ sph(.022,W-.04,y,pmz-.385,bulbM,gRight); sph(.022,W-.04,y,pmz+.385,bulbM,gRight); }
+for(let z=pmz-.27;z<=pmz+.28;z+=.135) sph(.022,W-.04,1.765,z,bulbM,gRight);
+pl('camarim',W-.22,1.38,pmz,2.6,1.2);
+cyl(.19,.42,2.45,.21,pmz,M.velvet); cyl(.19,.02,2.45,.01,pmz,M.gold);
+
+/* ---------- janela + cortinas (parede esquerda) ---------- */
+bx(0,.012,wy0,wy1,wz0,wz1,M.glass,gLeft,false);
+bx(0,.05,wy0-.03,wy0,wz0-.03,wz1+.03,M.white,gLeft);
+bx(0,.05,wy1,wy1+.03,wz0-.03,wz1+.03,M.white,gLeft);
+bx(0,.05,wy0,wy1,wz0-.03,wz0,M.white,gLeft); bx(0,.05,wy0,wy1,wz1,wz1+.03,M.white,gLeft);
+bx(0,.05,wy0,wy1,(wz0+wz1)/2-.015,(wz0+wz1)/2+.015,M.white,gLeft);
+cyl(.012,1.75,.10,2.45,(wz0+wz1)/2,M.gold,gLeft).rotation.x=Math.PI/2;
+[[wz0-.32,wz0+.02],[wz1-.02,wz1+.32]].forEach(([z0,z1])=>{
+  const n=7, g=new THREE.Group();
+  for(let i=0;i<n;i++){const zz=z0+(z1-z0)*i/n; const f=bx(.07,.11,.02,2.44,zz,zz+(z1-z0)/n+.01,M.linen,g); f.rotation.y=(i%2?.35:-.35);}
+  gLeft.add(g);
+});
+bx(0,.22,1.45,1.47,.45,.95,M.oak,gLeft);
+bx(.03,.19,1.47,1.66,.50,.53,M.book3,gLeft); bx(.03,.19,1.47,1.62,.535,.565,M.book1,gLeft); bx(.03,.19,1.47,1.68,.57,.6,M.book2,gLeft);
+cyl(.05,.1,.11,1.52,.82,M.pot,gLeft); sph(.07,.11,1.62,.82,M.leaf,gLeft);
+
+/* ---------- parede da frente: TV 43" + porta de correr ---------- */
+bx(.585,1.555,1.05,1.60,D-.03,D,M.tv,gFront);
+bx(.95,1.19,.62,.66,D-.25,D,M.oak,gFront);
+bx(1.50,2.50,2.13,2.16,D-.05,D,M.gold,gFront);
+bx(1.60,2.40,.01,2.11,D-.045,D-.012,M.door,gFront);
+for(let y=.3;y<2.0;y+=.2) bx(1.60,2.40,y,y+.004,D-.046,D-.045,M.slatBack,gFront,false);
+bx(1.66,1.675,.85,1.25,D-.07,D-.045,M.gold,gFront);
+
+/* ---------- teto: plafon + sanca ---------- */
+const plafon=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.035,40),led('teto')); plafon.position.set(W/2,H-.018,D/2); gCeil.add(plafon);
+pl('teto',W/2,H-.12,D/2,6,1.1,scene,true);
+const sm=led('sanca'), so=.28, sy=H-.12;
+bx(0,W,sy,sy+.04,0,so,M.ceil,gCeil); bx(0,W,sy,sy+.04,D-so,D,M.ceil,gCeil);
+bx(0,so,sy,sy+.04,so,D-so,M.ceil,gCeil); bx(W-so,W,sy,sy+.04,so,D-so,M.ceil,gCeil);
+bx(so,W-so,sy+.04,sy+.05,so-.02,so,sm,gCeil,false); bx(so,W-so,sy+.04,sy+.05,D-so,D-so+.02,sm,gCeil,false);
+bx(so-.02,so,sy+.04,sy+.05,so,D-so,sm,gCeil,false); bx(W-so,W-so+.02,sy+.04,sy+.05,so,D-so,sm,gCeil,false);
+pl('sanca',W/2,H-.06,.2,2.4,1.1); pl('sanca',W/2,H-.06,D-.2,2.4,1.1);
+pl('sanca',.2,H-.06,D/2,2.4,1.1); pl('sanca',W-.2,H-.06,D/2,2.4,1.1);
+
+/* ---------- estado e aplicação ---------- */
+let natural=0, rgb=false;
+const tmp=new THREE.Color();
+function applyLight(k,colorOverride){
+  const s=L[k]; const c=colorOverride||tmp.set(s.color);
+  const on=s.on && s.int>0;
+  s.lights.forEach(l=>{l.color.copy(c); l.intensity=on?base[k]*s.int:0;});
+  s.mats.forEach(m=>{m.emissive.copy(c); m.emissiveIntensity=on?.5+s.int*1.9:0; m.color.set(on?'#ffffff':'#3a3a3a');});
+}
+function applyNatural(){
+  sun.intensity=natural*1.15; hemi.intensity=.13+natural*.45;
+  M.glass.emissiveIntensity=.08+natural*1.1;
+}
+function applyAll(){Object.keys(L).forEach(k=>applyLight(k)); applyNatural();}
+
+/* ---------- UI ---------- */
+const list=document.getElementById('lights');
+Object.entries(L).forEach(([k,s])=>{
+  const row=document.createElement('div'); row.className='light';
+  row.innerHTML=`<span class="sw"><input type="checkbox" id="on-${k}" aria-label="Ligar ${s.name}"><span></span></span>
+    <label for="i-${k}"><span class="name">${s.name}</span><span class="where">${s.where}</span></label>
+    <input type="color" id="c-${k}" aria-label="Cor de ${s.name}">
+    <input type="range" id="i-${k}" min="0" max="1.5" step="0.01" aria-label="Intensidade de ${s.name}">`;
+  list.appendChild(row);
+  row.querySelector('#on-'+k).addEventListener('change',e=>{s.on=e.target.checked; if(s.on&&s.int<.05){s.int=.6; syncUI();} applyLight(k); clearPreset();});
+  row.querySelector('#c-'+k).addEventListener('input',e=>{s.color=e.target.value; applyLight(k); clearPreset();});
+  row.querySelector('#i-'+k).addEventListener('input',e=>{s.int=+e.target.value; s.on=s.int>0; document.getElementById('on-'+k).checked=s.on; applyLight(k); clearPreset();});
+});
+const natEl=document.getElementById('nat'), rgbEl=document.getElementById('rgb');
+natEl.addEventListener('input',e=>{natural=+e.target.value; applyNatural(); clearPreset();});
+rgbEl.addEventListener('change',e=>{rgb=e.target.checked; if(!rgb) applyAll(); clearPreset();});
+function syncUI(){
+  Object.entries(L).forEach(([k,s])=>{
+    document.getElementById('on-'+k).checked=s.on;
+    document.getElementById('c-'+k).value=s.color;
+    document.getElementById('i-'+k).value=s.int;
+  });
+  natEl.value=natural; rgbEl.checked=rgb;
+}
+
+const P={
+  relax:   {nat:0,  rgb:false, l:{teto:[0,'#fff3e2'],cabeceira:[1,'#ff9f55'],sobcama:[.6,'#ff7a3d'],abajur:[.35,'#ffc98a'],camarim:[0,'#fff1de'],sanca:[.5,'#ffb47a']}},
+  leitura: {nat:.05,rgb:false, l:{teto:[0,'#fff3e2'],cabeceira:[.35,'#ffb36b'],sobcama:[0,'#ff7a3d'],abajur:[1.2,'#ffe0b8'],camarim:[0,'#fff1de'],sanca:[.2,'#ffc996']}},
+  maquiagem:{nat:.25,rgb:false,l:{teto:[.7,'#ffffff'],cabeceira:[0,'#ff9f55'],sobcama:[0,'#ff7a3d'],abajur:[0,'#ffc98a'],camarim:[1.2,'#fff6ea'],sanca:[.3,'#ffffff']}},
+  cinema:  {nat:0,  rgb:true,  l:{teto:[0,'#fff3e2'],cabeceira:[1.1,'#7a5cff'],sobcama:[.9,'#ff3d9a'],abajur:[0,'#ffc98a'],camarim:[0,'#fff1de'],sanca:[.8,'#3dc9ff']}},
+  dia:     {nat:1,  rgb:false, l:{teto:[.5,'#fff8ef'],cabeceira:[0,'#ff9f55'],sobcama:[0,'#ff7a3d'],abajur:[0,'#ffc98a'],camarim:[0,'#fff1de'],sanca:[0,'#ffb47a']}},
+  noite:   {nat:0,  rgb:false, l:{teto:[0,'#fff3e2'],cabeceira:[0,'#ff9f55'],sobcama:[.3,'#ff8a3d'],abajur:[0,'#ffc98a'],camarim:[0,'#fff1de'],sanca:[0,'#ffb47a']}}
+};
+const presetBtns=[...document.querySelectorAll('#presets button')];
+function clearPreset(){presetBtns.forEach(b=>b.setAttribute('aria-pressed','false'));}
+function setPreset(name){
+  const p=P[name]; natural=p.nat; rgb=p.rgb;
+  Object.entries(p.l).forEach(([k,[i,c]])=>{L[k].int=i; L[k].color=c; L[k].on=i>0;});
+  applyAll(); syncUI();
+  presetBtns.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===name)));
+}
+presetBtns.forEach(b=>b.addEventListener('click',()=>setPreset(b.dataset.p)));
+
+/* ---------- vistas ---------- */
+const VIEWS={
+  persp:{p:[-1.5,3.5,4.7],t:[1.6,.7,1.2]},
+  plan:{p:[W/2,7.2,D/2+.01],t:[W/2,0,D/2]},
+  door:{p:[2.05,1.6,2.5],t:[.7,.85,.25]},
+  vanity:{p:[1.35,1.45,1.75],t:[3.0,1.25,1.7]},
+  bed:{p:[1.14,1.05,.55],t:[1.07,1.2,2.65]}
+};
+let anim=null;
+function goView(v,instant){
+  const to=VIEWS[v];
+  const fromP=camera.position.clone(), fromT=controls.target.clone();
+  const toP=V(...to.p), toT=V(...to.t);
+  if(instant||matchMedia('(prefers-reduced-motion: reduce)').matches){camera.position.copy(toP);controls.target.copy(toT);controls.update();anim=null;}
+  else anim={fromP,fromT,toP,toT,t0:performance.now(),dur:900};
+  document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));
+}
+document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click',()=>goView(b.dataset.v)));
+controls.addEventListener('start',()=>{anim=null;});
+
+/* ---------- loop ---------- */
+function resize(){
+  const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return;
+  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+  if(composer){composer.setSize(w,h); bloom.resolution.set(w,h);}
+}
+new ResizeObserver(resize).observe(stage);
+const clock=new THREE.Clock(), toCam=new THREE.Vector3();
+function frame(){
+  requestAnimationFrame(frame);
+  const t=clock.getElapsedTime();
+  if(anim){
+    let k=Math.min(1,(performance.now()-anim.t0)/anim.dur); k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    camera.position.lerpVectors(anim.fromP,anim.toP,k); controls.target.lerpVectors(anim.fromT,anim.toT,k);
+    if(k>=1) anim=null;
+  }
+  controls.update();
+  walls.forEach(w=>{ w.g.visible = toCam.copy(camera.position).sub(w.p).dot(w.n) > 0; });
+  if(rgb){ ['cabeceira','sobcama','sanca'].forEach((k,i)=>applyLight(k,tmp.setHSL((t*.07+i*.22)%1,.85,.55))); }
+  composer?composer.render():renderer.render(scene,camera);
+}
+setPreset('relax'); goView('persp',true); resize(); frame();
+})();
+</script>
