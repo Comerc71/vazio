@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Carrosséis Animania</title>
+<style>
+/* ===== IDENTIDADE VISUAL — troque aqui pelas cores/logo reais da marca ===== */
+:root{
+  --brand:#0f5c5a;        /* cor principal (verde-petróleo) */
+  --brand-dark:#0a3f3e;
+  --accent:#ff7a59;       /* cor de destaque (coral) */
+  --sun:#ffc94d;          /* cor de apoio (amarelo) */
+  --cream:#fff7ee;        /* fundo claro */
+  --ink:#1d2a2a;          /* texto */
+  --muted:#5b6b6a;
+  --font:"Inter Display","Inter",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#d9d4cc;font-family:var(--font);color:var(--ink);padding:40px;display:flex;flex-direction:column;gap:60px;align-items:center}
+h2.set{font:600 28px var(--font);color:#333;align-self:flex-start}
+.row{display:flex;gap:30px;flex-wrap:wrap;justify-content:center}
+.slide{width:1080px;height:1350px;position:relative;overflow:hidden;background:var(--cream);padding:96px 90px;display:flex;flex-direction:column}
+.slide.dark{background:var(--brand);color:#fff}
+.slide.accent{background:var(--accent);color:#fff}
+
+/* marca */
+.logo{display:flex;align-items:center;gap:16px;font-weight:800;font-size:38px;letter-spacing:-.5px;color:var(--brand)}
+.dark .logo,.accent .logo{color:#fff}
+.logo svg{width:56px;height:56px}
+.logo small{display:block;font-weight:500;font-size:20px;letter-spacing:2px;text-transform:uppercase;opacity:.75}
+
+.pager{position:absolute;top:100px;right:90px;font:600 24px var(--font);opacity:.6}
+.swipe{position:absolute;bottom:80px;right:90px;font:600 26px var(--font);display:flex;align-items:center;gap:12px;opacity:.85}
+.swipe span{display:inline-block;width:60px;height:4px;background:currentColor;border-radius:2px;position:relative}
+.swipe span:after{content:"";position:absolute;right:-2px;top:-8px;border:10px solid transparent;border-left:14px solid currentColor;border-right:0}
+
+.kicker{font-weight:700;font-size:30px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin-bottom:28px}
+.dark .kicker{color:var(--sun)}
+.accent .kicker{color:var(--brand-dark)}
+h1{font-weight:800;font-size:118px;line-height:.98;letter-spacing:-3px}
+h1 em{font-style:normal;color:var(--accent)}
+.dark h1 em{color:var(--sun)}
+h3{font-weight:800;font-size:76px;line-height:1.02;letter-spacing:-2px;margin-bottom:44px}
+h3 em{font-style:normal;color:var(--accent)}
+.dark h3 em{color:var(--sun)}
+p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-width:860px}
+.dark p.lead,.accent p.lead{color:rgba(255,255,255,.88)}
+
+.list{list-style:none;display:flex;flex-direction:column;gap:30px}
+.list li{display:flex;gap:28px;align-items:flex-start;font-size:40px;line-height:1.3;font-weight:500}
+.list li b{font-weight:800}
+.num{flex:none;width:76px;height:76px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:36px}
+.dark .num{background:var(--sun);color:var(--brand-dark)}
+.check{flex:none;width:64px;height:64px;border-radius:18px;background:var(--accent);display:grid;place-items:center;margin-top:2px}
+.check svg{width:36px;height:36px}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.card{background:#fff;border-radius:36px;padding:44px 40px;box-shadow:0 10px 0 rgba(15,92,90,.12)}
+.card .ico{width:84px;height:84px;border-radius:24px;background:var(--cream);display:grid;place-items:center;margin-bottom:24px;font-size:48px}
+.card h4{font-size:40px;font-weight:800;margin-bottom:10px;color:var(--brand)}
+.card p{font-size:28px;line-height:1.35;color:var(--muted)}
+
+.info{display:flex;flex-direction:column;gap:30px;margin-top:20px}
+.info div{display:flex;gap:26px;align-items:center;font-size:42px;font-weight:600}
+.info i{flex:none;width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;font-style:normal;font-size:40px}
+.btn{display:inline-flex;align-self:flex-start;align-items:center;gap:18px;background:var(--sun);color:var(--brand-dark);font-weight:800;font-size:44px;padding:30px 52px;border-radius:999px;margin-top:56px}
+
+.grow{flex:1}
+.blob{position:absolute;border-radius:50%}
+.paws{position:absolute;opacity:.12}
+.photo{position:absolute;right:-120px;bottom:-120px;width:760px;height:760px;border-radius:50%;background:var(--sun);display:grid;place-items:center;overflow:hidden}
+.photo .ph{font:600 26px var(--font);color:var(--brand-dark);text-align:center;opacity:.7;max-width:380px;margin:-140px 0 0 -140px}
+.photo svg{position:absolute;width:520px;height:520px;left:90px;top:70px}
+.footer-note{position:absolute;bottom:84px;left:90px;font-size:24px;opacity:.6;font-weight:500}
+</style>
+</head>
+<body>
+
+<!-- Ícones reutilizáveis -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="paw" viewBox="0 0 64 64">
+      <ellipse cx="32" cy="42" rx="14" ry="12"/>
+      <ellipse cx="14" cy="28" rx="6" ry="8"/>
+      <ellipse cx="50" cy="28" rx="6" ry="8"/>
+      <ellipse cx="24" cy="15" rx="6" ry="8"/>
+      <ellipse cx="40" cy="15" rx="6" ry="8"/>
+    </symbol>
+    <symbol id="tick" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="dog" viewBox="0 0 200 200">
+      <path d="M52 70 C30 60 22 100 40 120 L56 96Z" fill="var(--brand-dark)"/>
+      <path d="M148 70 C170 60 178 100 160 120 L144 96Z" fill="var(--brand-dark)"/>
+      <ellipse cx="100" cy="105" rx="56" ry="58" fill="var(--brand)"/>
+      <ellipse cx="100" cy="132" rx="30" ry="22" fill="var(--cream)"/>
+      <circle cx="78" cy="96" r="7" fill="#fff"/><circle cx="122" cy="96" r="7" fill="#fff"/>
+      <circle cx="79" cy="97" r="3.5" fill="var(--ink)"/><circle cx="123" cy="97" r="3.5" fill="var(--ink)"/>
+      <ellipse cx="100" cy="122" rx="10" ry="7" fill="var(--ink)"/>
+      <path d="M92 138 Q100 146 108 138" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M98 148 q2 14 10 10" fill="var(--accent)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ======================= CARROSSEL 1 — BANHO & TOSA ======================= -->
+<h2 class="set">Carrossel 1 — Banho &amp; Tosa</h2>
+<div class="row">
+
+  <section class="slide dark" data-name="1-banho-tosa_01">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="pager">1/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Banho &amp; Tosa</div>
+    <h1>Cheirinho<br>de <em>banho</em><br>tomado?</h1>
+    <p class="lead" style="margin-top:36px;max-width:560px">Veja por que o cuidado regular faz bem além da aparência.</p>
+    <div class="grow"></div>
+    <div class="photo" style="right:-180px;bottom:-200px;width:700px;height:700px"><svg><use href="#dog"/></svg></div>
+    <div class="swipe" style="color:#fff;left:90px;right:auto">Arraste <span></span></div>
+  </section>
+
+  <section class="slide" data-name="1-banho-tosa_02">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">2/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Não é só estética</div>
+    <h3>Banho regular é <em>saúde</em> pro seu pet</h3>
+    <ul class="list">
+      <li><span class="check"><svg><use href="#tick"/></svg></span><span>Ajuda a prevenir <b>pulgas, carrapatos</b> e fungos</span></li>
+      <li><span class="check"><svg><use href="#tick"/></svg></span><span>Mantém pele e pelagem <b>limpas e saudáveis</b></span></li>
+      <li><span class="check"><svg><use href="#tick"/></svg></span><span>Permite notar cedo <b>feridas, nódulos</b> ou alergias</span></li>
+      <li><span class="check"><svg><use href="#tick"/></svg></span><span>Menos odor e <b>mais conforto</b> no calor do Pará</span></li>
+    </ul>
+    <div class="grow"></div>
+    <div class="swipe" style="color:var(--brand)">Arraste <span></span></div>
+  </section>
+
+  <section class="slide" data-name="1-banho-tosa_03" style="background:#fff">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">3/5</div>
+    <div class="grow"></div>
+    <div class="kicker">O que está incluso</div>
+    <h3>Um <em>dia de spa</em> completo</h3>
+    <div class="cards">
+      <div class="card" style="background:var(--cream)"><div class="ico" style="background:#fff">🛁</div><h4>Banho</h4><p>Shampoo adequado ao tipo de pelo e secagem cuidadosa</p></div>
+      <div class="card" style="background:var(--cream)"><div class="ico" style="background:#fff">✂️</div><h4>Tosa</h4><p>Higiênica, na máquina ou na tesoura</p></div>
+      <div class="card" style="background:var(--cream)"><div class="ico" style="background:#fff">🐾</div><h4>Unhas</h4><p>Corte de unhas e limpeza das patinhas</p></div>
+      <div class="card" style="background:var(--cream)"><div class="ico" style="background:#fff">👂</div><h4>Ouvidos</h4><p>Limpeza delicada para evitar otites</p></div>
+    </div>
+    <div class="grow"></div>
+    <div class="swipe" style="color:var(--brand)">Arraste <span></span></div>
+  </section>
+
+  <section class="slide" data-name="1-banho-tosa_04">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">4/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Com que frequência?</div>
+    <h3>Cada pet tem o <em>seu ritmo</em></h3>
+    <ul class="list">
+      <li><span class="num">1</span><span><b>Pelo curto:</b> em geral a cada 15 a 30 dias</span></li>
+      <li><span class="num">2</span><span><b>Pelo longo:</b> banhos mais frequentes e escovação em casa</span></li>
+      <li><span class="num">3</span><span><b>Pele sensível:</b> siga sempre a orientação do veterinário</span></li>
+    </ul>
+    <p class="lead" style="margin-top:50px;font-size:34px">💡 Na dúvida, pergunte pra nossa equipe na hora de agendar.</p>
+    <div class="grow"></div>
+    <div class="swipe" style="color:var(--brand)">Arraste <span></span></div>
+  </section>
+
+  <section class="slide accent" data-name="1-banho-tosa_05">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="pager">5/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Agende agora</div>
+    <h3 style="font-size:96px">Seu pet merece esse <span style="color:var(--sun)">carinho</span></h3>
+    <div class="info">
+      <div><i>📱</i>(91) 98100-7580</div>
+      <div><i>📍</i>Av. Quinze de Maio, 160 · Centro</div>
+      <div><i>🕘</i>Seg a sex · 9h às 18h</div>
+    </div>
+    <div class="btn">Chama no WhatsApp →</div>
+    <div class="grow"></div>
+  </section>
+</div>
+
+<!-- ======================= CARROSSEL 2 — VACINAÇÃO ======================= -->
+<h2 class="set">Carrossel 2 — Vacinação em dia</h2>
+<div class="row">
+
+  <section class="slide" data-name="2-vacinacao_01" style="background:var(--sun)">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="pager">1/5</div>
+    <div class="grow"></div>
+    <div class="kicker" style="color:var(--brand)">Saúde pet</div>
+    <h1 style="color:var(--brand-dark)">A carteirinha<br>do seu pet<br>está <em>em dia?</em></h1>
+    <div class="grow"></div>
+    <div class="photo" style="background:var(--cream);right:-200px;bottom:-220px;width:700px;height:700px"><svg><use href="#dog"/></svg></div>
+    <div class="swipe" style="color:var(--brand-dark);left:90px;right:auto">Arraste <span></span></div>
+  </section>
+
+  <section class="slide dark" data-name="2-vacinacao_02">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">2/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Por que vacinar</div>
+    <h3>Prevenir é mais <em>simples</em> que tratar</h3>
+    <ul class="list">
+      <li><span class="num">1</span><span>Protege contra doenças graves como <b>cinomose</b>, <b>parvovirose</b> e <b>raiva</b></span></li>
+      <li><span class="num">2</span><span>Protege também <b>outros animais</b> e a sua família</span></li>
+      <li><span class="num">3</span><span>Evita gastos maiores com <b>tratamentos</b></span></li>
+    </ul>
+    <div class="grow"></div>
+    <div class="swipe" style="color:#fff">Arraste <span></span></div>
+  </section>
+
+  <section class="slide" data-name="2-vacinacao_03">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">3/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Para filhotes</div>
+    <h3>Os <em>primeiros meses</em> são decisivos</h3>
+    <ul class="list">
+      <li><span class="check"><svg><use href="#tick"/></svg></span><span>O protocolo costuma começar entre <b>6 e 8 semanas</b> de vida</span></li>
+      <li><span class="check"><svg><use href="#tick"/></svg></span><span>São várias doses, com <b>intervalos definidos</b> pelo veterinário</span></li>
+      <li><span class="check"><svg><use href="#tick"/></svg></span><span>Passeios na rua só <b>depois de completar</b> o protocolo</span></li>
+    </ul>
+    <div class="grow"></div>
+    <div class="swipe" style="color:var(--brand)">Arraste <span></span></div>
+  </section>
+
+  <section class="slide" data-name="2-vacinacao_04" style="background:#fff">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">4/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Pet adulto também</div>
+    <h3>Vacina não é <em>só pra filhote</em></h3>
+    <div class="cards" style="grid-template-columns:1fr">
+      <div class="card" style="background:var(--cream);display:flex;gap:30px;align-items:center"><div class="ico" style="background:#fff;margin:0;flex:none">🔁</div><div><h4>Reforço anual</h4><p>A maioria das vacinas precisa de reforço todo ano</p></div></div>
+      <div class="card" style="background:var(--cream);display:flex;gap:30px;align-items:center"><div class="ico" style="background:#fff;margin:0;flex:none">🩺</div><div><h4>Check-up junto</h4><p>Aproveite a visita para uma avaliação geral</p></div></div>
+      <div class="card" style="background:var(--cream);display:flex;gap:30px;align-items:center"><div class="ico" style="background:#fff;margin:0;flex:none">📒</div><div><h4>Carteirinha</h4><p>Traga sempre: é o histórico de saúde do seu pet</p></div></div>
+    </div>
+    <div class="grow"></div>
+    <div class="swipe" style="color:var(--brand)">Arraste <span></span></div>
+  </section>
+
+  <section class="slide dark" data-name="2-vacinacao_05">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="pager">5/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Fale com a gente</div>
+    <h3 style="font-size:96px">Vamos conferir a <em>carteirinha?</em></h3>
+    <div class="info">
+      <div><i>📱</i>(91) 98100-7580</div>
+      <div><i>📍</i>Av. Quinze de Maio, 160 · Centro</div>
+      <div><i>🕘</i>Seg a sex · 9h às 18h</div>
+    </div>
+    <div class="btn">Agende sua consulta →</div>
+    <div class="grow"></div>
+  </section>
+</div>
+
+<!-- ======================= CARROSSEL 3 — APRESENTAÇÃO ======================= -->
+<h2 class="set">Carrossel 3 — Conheça a Animania</h2>
+<div class="row">
+
+  <section class="slide accent" data-name="3-apresentacao_01">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="pager">1/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Paragominas · PA</div>
+    <h1>Tudo que<br>seu pet precisa<br>em <span style="color:var(--sun)">um só lugar</span></h1>
+    <div class="grow"></div>
+    <div class="swipe" style="color:#fff">Arraste <span></span></div>
+  </section>
+
+  <section class="slide" data-name="3-apresentacao_02">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">2/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Nossos serviços</div>
+    <h3>Cuidado de <em>ponta a ponta</em></h3>
+    <div class="cards">
+      <div class="card"><div class="ico">🩺</div><h4>Consultas</h4><p>Atendimento veterinário para cães e gatos</p></div>
+      <div class="card"><div class="ico">💉</div><h4>Vacinas</h4><p>Protocolo para filhotes e reforços</p></div>
+      <div class="card"><div class="ico">🛁</div><h4>Banho &amp; Tosa</h4><p>Higiene e beleza com carinho</p></div>
+      <div class="card"><div class="ico">🦴</div><h4>Pet Shop</h4><p>Rações, petiscos e acessórios</p></div>
+    </div>
+    <div class="grow"></div>
+    <div class="swipe" style="color:var(--brand)">Arraste <span></span></div>
+  </section>
+
+  <section class="slide dark" data-name="3-apresentacao_03">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">3/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Por que nos escolher</div>
+    <h3>Seu pet tratado como <em>da família</em></h3>
+    <ul class="list">
+      <li><span class="num">1</span><span><b>Clínica e pet shop</b> juntos: resolve tudo numa visita</span></li>
+      <li><span class="num">2</span><span>Equipe que <b>conhece seu pet</b> pelo nome</span></li>
+      <li><span class="num">3</span><span>No <b>Centro</b>, fácil de chegar</span></li>
+    </ul>
+    <div class="grow"></div>
+    <div class="swipe" style="color:#fff">Arraste <span></span></div>
+  </section>
+
+  <section class="slide" data-name="3-apresentacao_04" style="background:var(--sun)">
+    <div class="logo" style="color:var(--brand-dark)"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="pager">4/5</div>
+    <div class="grow"></div>
+    <div class="kicker" style="color:var(--brand)">Onde estamos</div>
+    <h3 style="color:var(--brand-dark)">Av. Quinze de Maio, 160</h3>
+    <p class="lead" style="color:var(--brand-dark);font-size:48px;font-weight:700">Centro · Paragominas – PA</p>
+    <div class="card" style="margin-top:60px;display:flex;gap:30px;align-items:center">
+      <div class="ico" style="margin:0;flex:none">🕘</div>
+      <div><h4>Horário</h4><p style="font-size:34px">Segunda a sexta, das 9h às 18h</p></div>
+    </div>
+    <div class="grow"></div>
+    <div class="swipe" style="color:var(--brand-dark)">Arraste <span></span></div>
+  </section>
+
+  <section class="slide dark" data-name="3-apresentacao_05">
+    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="pager">5/5</div>
+    <div class="grow"></div>
+    <div class="kicker">Vem conhecer</div>
+    <h3 style="font-size:100px">Siga, salve e <em>compartilhe</em> com quem ama pets</h3>
+    <div class="btn">📱 (91) 98100-7580</div>
+    <div class="grow"></div>
+    <div class="photo" style="right:-220px;bottom:-260px;width:640px;height:640px"><svg style="width:420px;height:420px;left:60px;top:40px"><use href="#dog"/></svg></div>
+  </section>
+</div>
+
+</body>
+</html>
