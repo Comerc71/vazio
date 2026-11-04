@@ -6,13 +6,13 @@
 <style>
 /* ===== IDENTIDADE VISUAL — troque aqui pelas cores/logo reais da marca ===== */
 :root{
-  --brand:#0f5c5a;        /* cor principal (verde-petróleo) */
-  --brand-dark:#0a3f3e;
-  --accent:#ff7a59;       /* cor de destaque (coral) */
-  --sun:#ffc94d;          /* cor de apoio (amarelo) */
-  --cream:#fff7ee;        /* fundo claro */
-  --ink:#1d2a2a;          /* texto */
-  --muted:#5b6b6a;
+  --brand:#2c50a4;        /* azul royal do logotipo "Animania" */
+  --brand-dark:#1c3570;
+  --accent:#2d6a3e;       /* verde do ícone e de "Clínica Veterinária" */
+  --sun:#c9ebc1;          /* verde-claro de apoio (destaques em fundo escuro) */
+  --cream:#f2f5f1;        /* fundo claro, cinza-esverdeado como o do logo */
+  --ink:#1b2433;          /* texto */
+  --muted:#556070;
   --font:"Inter Display","Inter",sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -24,10 +24,13 @@ h2.set{font:600 28px var(--font);color:#333;align-self:flex-start}
 .slide.accent{background:var(--accent);color:#fff}
 
 /* marca */
-.logo{display:flex;align-items:center;gap:16px;font-weight:800;font-size:38px;letter-spacing:-.5px;color:var(--brand)}
+.logo{display:flex;align-items:center;gap:18px;font-family:"Carlito",var(--font);font-weight:700;font-size:46px;line-height:1;color:var(--brand)}
+.logo svg{color:var(--accent)}
+.logo small{color:var(--accent)}
+.dark .logo svg,.accent .logo svg,.dark .logo small,.accent .logo small{color:#fff}
 .dark .logo,.accent .logo{color:#fff}
-.logo svg{width:56px;height:56px}
-.logo small{display:block;font-weight:500;font-size:20px;letter-spacing:2px;text-transform:uppercase;opacity:.75}
+.logo svg{width:68px;height:68px}
+.logo small{display:block;font-weight:700;font-size:25px;margin-top:4px;opacity:.95}
 
 .pager{position:absolute;top:100px;right:90px;font:600 24px var(--font);opacity:.6}
 .swipe{position:absolute;bottom:80px;right:90px;font:600 26px var(--font);display:flex;align-items:center;gap:12px;opacity:.85}
@@ -36,7 +39,7 @@ h2.set{font:600 28px var(--font);color:#333;align-self:flex-start}
 
 .kicker{font-weight:700;font-size:30px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin-bottom:28px}
 .dark .kicker{color:var(--sun)}
-.accent .kicker{color:var(--brand-dark)}
+.accent .kicker{color:var(--sun)}
 h1{font-weight:800;font-size:118px;line-height:.98;letter-spacing:-3px}
 h1 em{font-style:normal;color:var(--accent)}
 .dark h1 em{color:var(--sun)}
@@ -86,6 +89,16 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
       <ellipse cx="24" cy="15" rx="6" ry="8"/>
       <ellipse cx="40" cy="15" rx="6" ry="8"/>
     </symbol>
+    <symbol id="mark" viewBox="0 0 64 64">
+      <path d="M22 13.5 A23 23 0 1 0 42 13.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+      <rect x="28.5" y="1" width="7" height="20" rx="1" fill="currentColor"/>
+      <rect x="22" y="7.5" width="20" height="7" rx="1" fill="currentColor"/>
+      <path d="M32 33c-6 0-10 6-10 10.5 0 3.5 3 4.5 6 3.8 2.3-.6 5.7-.6 8 0 3 .7 6-.3 6-3.8C42 39 38 33 32 33z" fill="currentColor"/>
+      <ellipse cx="22" cy="31" rx="3.2" ry="4.2" transform="rotate(-25 22 31)" fill="currentColor"/>
+      <ellipse cx="28" cy="25.5" rx="3.3" ry="4.4" fill="currentColor"/>
+      <ellipse cx="36.5" cy="25.5" rx="3.3" ry="4.4" fill="currentColor"/>
+      <ellipse cx="42.5" cy="32" rx="3.2" ry="4.2" transform="rotate(30 42.5 32)" fill="currentColor"/>
+    </symbol>
     <symbol id="tick" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="dog" viewBox="0 0 200 200">
       <path d="M52 70 C30 60 22 100 40 120 L56 96Z" fill="var(--brand-dark)"/>
@@ -96,7 +109,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
       <circle cx="79" cy="97" r="3.5" fill="var(--ink)"/><circle cx="123" cy="97" r="3.5" fill="var(--ink)"/>
       <ellipse cx="100" cy="122" rx="10" ry="7" fill="var(--ink)"/>
       <path d="M92 138 Q100 146 108 138" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
-      <path d="M98 148 q2 14 10 10" fill="var(--accent)"/>
+      <path d="M98 148 q2 14 10 10" fill="#f28b9b"/>
     </symbol>
   </defs>
 </svg>
@@ -106,7 +119,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
 <div class="row">
 
   <section class="slide dark" data-name="1-banho-tosa_01">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania<small>Clínica Veterinária</small></div></div>
     <div class="pager">1/5</div>
     <div class="grow"></div>
     <div class="kicker">Banho &amp; Tosa</div>
@@ -118,7 +131,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide" data-name="1-banho-tosa_02">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">2/5</div>
     <div class="grow"></div>
     <div class="kicker">Não é só estética</div>
@@ -134,7 +147,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide" data-name="1-banho-tosa_03" style="background:#fff">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">3/5</div>
     <div class="grow"></div>
     <div class="kicker">O que está incluso</div>
@@ -150,7 +163,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide" data-name="1-banho-tosa_04">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">4/5</div>
     <div class="grow"></div>
     <div class="kicker">Com que frequência?</div>
@@ -166,7 +179,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide accent" data-name="1-banho-tosa_05">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania<small>Clínica Veterinária</small></div></div>
     <div class="pager">5/5</div>
     <div class="grow"></div>
     <div class="kicker">Agende agora</div>
@@ -186,7 +199,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
 <div class="row">
 
   <section class="slide" data-name="2-vacinacao_01" style="background:var(--sun)">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania<small>Clínica Veterinária</small></div></div>
     <div class="pager">1/5</div>
     <div class="grow"></div>
     <div class="kicker" style="color:var(--brand)">Saúde pet</div>
@@ -197,7 +210,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide dark" data-name="2-vacinacao_02">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">2/5</div>
     <div class="grow"></div>
     <div class="kicker">Por que vacinar</div>
@@ -212,7 +225,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide" data-name="2-vacinacao_03">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">3/5</div>
     <div class="grow"></div>
     <div class="kicker">Para filhotes</div>
@@ -227,7 +240,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide" data-name="2-vacinacao_04" style="background:#fff">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">4/5</div>
     <div class="grow"></div>
     <div class="kicker">Pet adulto também</div>
@@ -242,7 +255,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide dark" data-name="2-vacinacao_05">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania<small>Clínica Veterinária</small></div></div>
     <div class="pager">5/5</div>
     <div class="grow"></div>
     <div class="kicker">Fale com a gente</div>
@@ -262,7 +275,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
 <div class="row">
 
   <section class="slide accent" data-name="3-apresentacao_01">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania<small>Clínica Veterinária</small></div></div>
     <div class="pager">1/5</div>
     <div class="grow"></div>
     <div class="kicker">Paragominas · PA</div>
@@ -272,7 +285,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide" data-name="3-apresentacao_02">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">2/5</div>
     <div class="grow"></div>
     <div class="kicker">Nossos serviços</div>
@@ -288,7 +301,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide dark" data-name="3-apresentacao_03">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">3/5</div>
     <div class="grow"></div>
     <div class="kicker">Por que nos escolher</div>
@@ -303,7 +316,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide" data-name="3-apresentacao_04" style="background:var(--sun)">
-    <div class="logo" style="color:var(--brand-dark)"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania</div></div>
+    <div class="logo" style="color:var(--brand-dark)"><svg><use href="#mark"/></svg><div>Animania</div></div>
     <div class="pager">4/5</div>
     <div class="grow"></div>
     <div class="kicker" style="color:var(--brand)">Onde estamos</div>
@@ -318,7 +331,7 @@ p.lead{font-size:40px;line-height:1.35;font-weight:500;color:var(--muted);max-wi
   </section>
 
   <section class="slide dark" data-name="3-apresentacao_05">
-    <div class="logo"><svg fill="currentColor"><use href="#paw"/></svg><div>Animania<small>Clínica &amp; Pet Shop</small></div></div>
+    <div class="logo"><svg><use href="#mark"/></svg><div>Animania<small>Clínica Veterinária</small></div></div>
     <div class="pager">5/5</div>
     <div class="grow"></div>
     <div class="kicker">Vem conhecer</div>
