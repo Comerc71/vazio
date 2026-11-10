@@ -1,0 +1,44 @@
+{
+  "nome": "Pet Shop Exemplo",
+  "tipo": "pet shop",
+  "cidade": "Paragominas - PA",
+  "endereco": "Rua Exemplo, 123 - Centro, Paragominas - PA",
+  "fuso_horario": "America/Belem",
+  "nome_atendente": "Luna",
+  "horario_funcionamento": {
+    "segunda": ["08:00", "18:00"],
+    "terca": ["08:00", "18:00"],
+    "quarta": ["08:00", "18:00"],
+    "quinta": ["08:00", "18:00"],
+    "sexta": ["08:00", "18:00"],
+    "sabado": ["08:00", "13:00"],
+    "domingo": null
+  },
+  "atendimentos_simultaneos": 2,
+  "intervalo_agenda_minutos": 30,
+  "antecedencia_minima_minutos": 60,
+  "dias_para_frente": 30,
+  "servicos": [
+    { "id": "banho_p", "nome": "Banho - porte pequeno", "preco": "R$ 40,00", "duracao_minutos": 60, "agendavel": true },
+    { "id": "banho_m", "nome": "Banho - porte médio", "preco": "R$ 55,00", "duracao_minutos": 60, "agendavel": true },
+    { "id": "banho_g", "nome": "Banho - porte grande", "preco": "R$ 70,00", "duracao_minutos": 90, "agendavel": true },
+    { "id": "banho_tosa_p", "nome": "Banho e tosa - porte pequeno", "preco": "R$ 65,00", "duracao_minutos": 90, "agendavel": true },
+    { "id": "banho_tosa_m", "nome": "Banho e tosa - porte médio", "preco": "R$ 85,00", "duracao_minutos": 120, "agendavel": true },
+    { "id": "banho_tosa_g", "nome": "Banho e tosa - porte grande", "preco": "a partir de R$ 110,00", "duracao_minutos": 150, "agendavel": true },
+    { "id": "tosa_higienica", "nome": "Tosa higiênica", "preco": "R$ 30,00", "duracao_minutos": 30, "agendavel": true },
+    { "id": "taxi_dog", "nome": "Táxi dog (busca e entrega no Centro)", "preco": "R$ 15,00", "duracao_minutos": 0, "agendavel": false }
+  ],
+  "produtos": [
+    "Rações de várias marcas para cães e gatos (preço depende da marca e do peso; confirmar com a loja)",
+    "Petiscos, brinquedos, coleiras, camas e acessórios",
+    "Antipulgas e vermífugos"
+  ],
+  "formas_pagamento": ["Pix", "dinheiro", "cartão de débito", "cartão de crédito"],
+  "regras": [
+    "Pets agressivos precisam de focinheira e o tutor deve avisar antes.",
+    "Atraso de mais de 20 minutos pode exigir remarcação.",
+    "Cancelamentos devem ser feitos com pelo menos 2 horas de antecedência.",
+    "A carteira de vacinação em dia é obrigatória para banho e tosa."
+  ],
+  "informacoes_extras": "Não fazemos consultas veterinárias. Para emergências, orientar a procurar uma clínica veterinária imediatamente."
+}
