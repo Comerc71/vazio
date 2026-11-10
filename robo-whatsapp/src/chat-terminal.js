@@ -1,7 +1,17 @@
 // Conversa com o robô pelo terminal, sem WhatsApp. Ótimo para testar e para demonstrar ao cliente.
-// Uso: npm run chat
+// Uso: npm run chat                (pet shop de exemplo)
+//      npm run chat:odonto         (clínica odontológica de exemplo)
+//      npm run chat -- config/seu-cliente.json
+import path from "node:path";
 import readline from "node:readline/promises";
 import { montarAtendente } from "./montar.js";
+
+const arquivo = process.argv[2];
+if (arquivo) {
+  process.env.NEGOCIO_ARQUIVO = arquivo;
+  // Cada configuração testada no terminal guarda agenda e conversas numa pasta própria.
+  process.env.PASTA_DADOS ??= path.join("data", path.basename(arquivo, ".json"));
+}
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error("Defina ANTHROPIC_API_KEY no arquivo .env (veja .env.example).");

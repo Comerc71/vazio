@@ -1,6 +1,6 @@
 {
   "nome": "Pet Shop Exemplo",
-  "tipo": "pet shop",
+  "tipo": "um pet shop",
   "cidade": "Paragominas - PA",
   "endereco": "Rua Exemplo, 123 - Centro, Paragominas - PA",
   "fuso_horario": "America/Belem",
@@ -28,11 +28,6 @@
     { "id": "tosa_higienica", "nome": "Tosa higiênica", "preco": "R$ 30,00", "duracao_minutos": 30, "agendavel": true },
     { "id": "taxi_dog", "nome": "Táxi dog (busca e entrega no Centro)", "preco": "R$ 15,00", "duracao_minutos": 0, "agendavel": false }
   ],
-  "produtos": [
-    "Rações de várias marcas para cães e gatos (preço depende da marca e do peso; confirmar com a loja)",
-    "Petiscos, brinquedos, coleiras, camas e acessórios",
-    "Antipulgas e vermífugos"
-  ],
   "formas_pagamento": ["Pix", "dinheiro", "cartão de débito", "cartão de crédito"],
   "regras": [
     "Pets agressivos precisam de focinheira e o tutor deve avisar antes.",
@@ -40,5 +35,18 @@
     "Cancelamentos devem ser feitos com pelo menos 2 horas de antecedência.",
     "A carteira de vacinação em dia é obrigatória para banho e tosa."
   ],
-  "informacoes_extras": "Não fazemos consultas veterinárias. Para emergências, orientar a procurar uma clínica veterinária imediatamente."
+  "secoes_extras": {
+    "Produtos": [
+      "Rações de várias marcas para cães e gatos (preço depende da marca e do peso; confirmar com a loja)",
+      "Petiscos, brinquedos, coleiras, camas e acessórios",
+      "Antipulgas e vermífugos"
+    ]
+  },
+  "informacoes_extras": "Não fazemos consultas veterinárias.",
+  "dados_para_agendar": "o serviço (no caso de banho e tosa, o porte do pet), o dia, o horário, o nome do tutor e o nome do pet",
+  "lembrar_apos_agendar": "a carteira de vacinação em dia e a tolerância de 20 minutos de atraso",
+  "cuidados": [
+    "Se o tutor descrever uma emergência com o animal (sangramento, envenenamento, dificuldade para respirar, convulsão, atropelamento), oriente a procurar uma clínica veterinária imediatamente e chame um atendente.",
+    "Para saúde do animal, recomende um veterinário."
+  ]
 }

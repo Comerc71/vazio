@@ -2,7 +2,7 @@
   "name": "robo-whatsapp",
   "version": "1.0.0",
   "private": true,
-  "description": "Atendente de IA para WhatsApp (pet shops e outros negócios): responde clientes, agenda horários e chama um humano quando precisa.",
+  "description": "Atendente de IA para WhatsApp (pet shops, clínicas odontológicas e outros negócios): responde clientes, agenda horários e chama um humano quando precisa.",
   "type": "module",
   "engines": {
     "node": ">=22.9"
@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env src/servidor.js",
     "chat": "node --env-file-if-exists=.env src/chat-terminal.js",
+    "chat:odonto": "node --env-file-if-exists=.env src/chat-terminal.js config/odontologia.json",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {

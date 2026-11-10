@@ -1,6 +1,6 @@
 # Robô de atendimento no WhatsApp (IA)
 
-Atendente virtual para **pet shops** e outros negócios locais. Ele responde os clientes no WhatsApp 24 horas e:
+Atendente virtual para **pet shops**, **clínicas odontológicas** e outros negócios locais. Ele responde os clientes no WhatsApp 24 horas e:
 
 - tira dúvidas de **preços, horários, endereço e regras** usando só as informações que você cadastrar;
 - **agenda serviços** (banho, tosa etc.) numa agenda própria, sem marcar dois pets no mesmo horário além da capacidade da loja;
@@ -23,9 +23,17 @@ npm run chat
 
 Converse como se fosse um cliente: "quanto é o banho de um poodle?", "tem horário amanhã de manhã?", "quero falar com alguém". Dá para usar isso também para **demonstrar ao dono da loja**.
 
+Há dois exemplos prontos:
+
+| Comando | Negócio de exemplo | Arquivo |
+|---|---|---|
+| `npm run chat` | Pet shop | [`config/negocio.json`](config/negocio.json) |
+| `npm run chat:odonto` | Clínica odontológica (convênios, urgência, avaliação antes de orçamento) | [`config/odontologia.json`](config/odontologia.json) |
+| `npm run chat -- config/seu-cliente.json` | Qualquer outro arquivo que você criar | |
+
 ## 2. Configurar para um cliente
 
-Edite [`config/negocio.json`](config/negocio.json):
+Copie um dos exemplos (ex.: `config/odontologia.json` para `config/clinica-fulano.json`) e edite:
 
 | Campo | O que é |
 |---|---|
@@ -37,9 +45,15 @@ Edite [`config/negocio.json`](config/negocio.json):
 | `antecedencia_minima_minutos` | Não agenda para "daqui a 10 minutos" |
 | `dias_para_frente` | Até quantos dias à frente pode agendar |
 | `servicos` | `id`, `nome`, `preco` (texto livre), `duracao_minutos`, `agendavel` |
-| `produtos`, `formas_pagamento`, `regras`, `informacoes_extras` | O robô usa isso para responder |
+| `formas_pagamento`, `regras`, `informacoes_extras` | O robô usa isso para responder |
+| `secoes_extras` | Listas livres com título, ex.: `"Produtos"`, `"Convênios aceitos"`, `"Equipe"` |
+| `dados_para_agendar` | O que o robô precisa perguntar antes de agendar |
+| `lembrar_apos_agendar` | O que ele lembra ao cliente depois de agendar |
+| `cuidados` | Regras específicas do ramo: urgências, o que nunca dizer, dados sensíveis |
 
-Serve para outros negócios também (salão, barbearia, clínica, oficina): é só trocar os serviços, as regras e o `tipo`. Para atender vários clientes, rode um robô por cliente, cada um com o seu `.env` e o seu `NEGOCIO_ARQUIVO`.
+Serve para outros negócios também (salão, barbearia, oficina): é só trocar os serviços, as regras, os `cuidados` e o `tipo`. No servidor, escolha o arquivo com `NEGOCIO_ARQUIVO` no `.env`. Para atender vários clientes, rode um robô por cliente, cada um com o seu `.env`.
+
+> **Área da saúde (dentistas, clínicas):** o exemplo odontológico já proíbe diagnóstico, indicação de remédio e valor final de tratamento que depende de avaliação, e pede só os dados necessários (LGPD). Peça para a clínica revisar os textos antes de colocar no ar.
 
 ## 3. Ligar no WhatsApp (Cloud API da Meta)
 

@@ -1,0 +1,62 @@
+{
+  "nome": "Clínica Odontológica Exemplo",
+  "tipo": "uma clínica odontológica",
+  "cidade": "Paragominas - PA",
+  "endereco": "Rua Exemplo, 456 - Centro, Paragominas - PA",
+  "fuso_horario": "America/Belem",
+  "nome_atendente": "Sofia",
+  "horario_funcionamento": {
+    "segunda": ["08:00", "18:00"],
+    "terca": ["08:00", "18:00"],
+    "quarta": ["08:00", "18:00"],
+    "quinta": ["08:00", "18:00"],
+    "sexta": ["08:00", "17:00"],
+    "sabado": ["08:00", "12:00"],
+    "domingo": null
+  },
+  "atendimentos_simultaneos": 1,
+  "intervalo_agenda_minutos": 30,
+  "antecedencia_minima_minutos": 120,
+  "dias_para_frente": 45,
+  "servicos": [
+    { "id": "avaliacao", "nome": "Avaliação / primeira consulta (inclui plano de tratamento e orçamento)", "preco": "R$ 80,00 (abatido do tratamento se fechar o orçamento)", "duracao_minutos": 30, "agendavel": true },
+    { "id": "limpeza", "nome": "Limpeza (profilaxia) com aplicação de flúor", "preco": "R$ 150,00", "duracao_minutos": 60, "agendavel": true },
+    { "id": "restauracao", "nome": "Restauração (obturação) em resina", "preco": "a partir de R$ 180,00 por dente; valor final após avaliação", "duracao_minutos": 60, "agendavel": true },
+    { "id": "extracao", "nome": "Extração simples", "preco": "a partir de R$ 200,00; siso e casos complexos só após avaliação", "duracao_minutos": 60, "agendavel": true },
+    { "id": "clareamento", "nome": "Clareamento dental (consultório ou caseiro)", "preco": "a partir de R$ 690,00; precisa de avaliação antes", "duracao_minutos": 60, "agendavel": false },
+    { "id": "canal", "nome": "Tratamento de canal", "preco": "orçamento após avaliação", "duracao_minutos": 90, "agendavel": false },
+    { "id": "manutencao_aparelho", "nome": "Manutenção de aparelho ortodôntico (pacientes da clínica)", "preco": "R$ 120,00 por mês", "duracao_minutos": 30, "agendavel": true },
+    { "id": "implante_protese", "nome": "Implantes, próteses e lentes de contato dental", "preco": "orçamento após avaliação", "duracao_minutos": 60, "agendavel": false },
+    { "id": "urgencia", "nome": "Atendimento de urgência (dor, dente quebrado, inchaço)", "preco": "a partir de R$ 150,00", "duracao_minutos": 30, "agendavel": true }
+  ],
+  "formas_pagamento": ["Pix", "dinheiro", "cartão de débito", "cartão de crédito em até 10x sem juros (tratamentos acima de R$ 500)"],
+  "regras": [
+    "Chegar 10 minutos antes da consulta.",
+    "Menores de 18 anos precisam estar acompanhados de um responsável.",
+    "Atraso de mais de 15 minutos pode exigir remarcação.",
+    "Cancelamentos e remarcações com pelo menos 24 horas de antecedência.",
+    "Clareamento, canal, implantes e próteses começam sempre com uma avaliação."
+  ],
+  "secoes_extras": {
+    "Convênios aceitos": [
+      "Odontoprev",
+      "Uniodonto",
+      "Outros convênios: confirmar com a recepção antes de agendar"
+    ],
+    "Equipe": [
+      "Dra. Exemplo - clínica geral e estética (CRO-PA 0000)",
+      "Dr. Exemplo - ortodontia e implantes (CRO-PA 0000)"
+    ]
+  },
+  "informacoes_extras": "Estacionamento gratuito em frente. Atendemos crianças a partir de 3 anos.",
+  "dados_para_agendar": "o procedimento (na dúvida, agende uma avaliação), o dia, o horário, o nome completo do paciente, se é particular ou convênio (e qual) e, se o paciente for menor de idade, o nome do responsável",
+  "lembrar_apos_agendar": "chegar 10 minutos antes, trazer documento com foto e a carteirinha do convênio (se tiver) e avisar com 24 horas de antecedência se precisar remarcar",
+  "cuidados": [
+    "Urgência odontológica: se o paciente relatar dor forte, inchaço no rosto, febre, sangramento que não para ou dente quebrado/arrancado por pancada, ofereça o horário de urgência mais próximo com ver_horarios_livres (servico_id urgencia) e chame um atendente. Se houver inchaço que dificulta respirar ou engolir, ou trauma forte no rosto, oriente a ir imediatamente a um pronto-socorro.",
+    "Dente arrancado por pancada: oriente a guardar o dente em leite ou soro, sem esfregar a raiz, e vir à clínica o quanto antes.",
+    "Nunca diga qual tratamento o paciente precisa nem o valor final de tratamentos que dependem de avaliação. Explique que o dentista define na avaliação.",
+    "Não indique antibiótico, anti-inflamatório nem qualquer remédio, nem dose. Em caso de dor, diga que o dentista vai orientar e ofereça o horário mais próximo.",
+    "Dados de saúde são sensíveis: não peça detalhes de doenças ou exames pelo WhatsApp além do necessário para agendar. Se o paciente contar, apenas anote o essencial em observações.",
+    "Pedido de orçamento de tratamento: explique que o orçamento é feito na avaliação e ofereça agendar uma."
+  ]
+}

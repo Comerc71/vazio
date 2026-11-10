@@ -27,14 +27,17 @@ export const FERRAMENTAS = [
         servico_id: { type: "string", description: "id do serviço" },
         data: { type: "string", description: "Dia no formato AAAA-MM-DD" },
         hora: { type: "string", description: "Hora de início no formato HH:MM, um dos horários livres" },
-        nome_cliente: { type: "string", description: "Nome do tutor" },
-        nome_pet: { type: "string", description: "Nome do pet" },
+        nome_cliente: { type: "string", description: "Nome de quem está conversando (tutor, paciente ou responsável)" },
+        nome_atendido: {
+          type: "string",
+          description: "Nome de quem será atendido: o pet, o paciente ou o próprio cliente",
+        },
         observacoes: {
           type: "string",
-          description: "Raça, porte, comportamento ou pedidos especiais. Texto vazio se não houver.",
+          description: "Detalhes úteis para a equipe (ex.: porte do pet, primeira consulta, convênio). Texto vazio se não houver.",
         },
       },
-      required: ["servico_id", "data", "hora", "nome_cliente", "nome_pet", "observacoes"],
+      required: ["servico_id", "data", "hora", "nome_cliente", "nome_atendido", "observacoes"],
       additionalProperties: false,
     },
   },
@@ -88,7 +91,7 @@ export async function executarFerramenta(nome, entrada, contexto) {
         data: entrada.data,
         hora: entrada.hora,
         nomeCliente: entrada.nome_cliente,
-        nomePet: entrada.nome_pet,
+        nomeAtendido: entrada.nome_atendido,
         observacoes: entrada.observacoes,
       });
     case "meus_agendamentos":

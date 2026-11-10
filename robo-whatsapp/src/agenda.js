@@ -63,7 +63,7 @@ export class Agenda {
       return false;
     }
 
-    // Em cada minuto do intervalo, a quantidade de pets em atendimento tem que ficar abaixo da capacidade.
+    // Em cada minuto do intervalo, a quantidade de atendimentos simultâneos tem que ficar abaixo da capacidade.
     const ocupados = this.ativosNoDia(data).map((a) => [horaParaMinutos(a.hora), horaParaMinutos(a.hora) + a.duracao_minutos]);
     for (let minuto = inicio; minuto < fim; minuto++) {
       const simultaneos = ocupados.filter(([ini, f]) => ini <= minuto && minuto < f).length;
@@ -87,7 +87,7 @@ export class Agenda {
     return { data, dia: dataPorExtenso(data), servico: servico.nome, horarios_livres: livres };
   }
 
-  agendar({ telefone, servicoId, data, hora, nomeCliente, nomePet, observacoes }) {
+  agendar({ telefone, servicoId, data, hora, nomeCliente, nomeAtendido, observacoes }) {
     const servico = this.servico(servicoId);
     if (!servico) return { erro: `Serviço "${servicoId}" não existe.` };
     if (!servico.agendavel) return { erro: `"${servico.nome}" não precisa de horário na agenda.` };
@@ -108,7 +108,7 @@ export class Agenda {
       data,
       hora,
       nome_cliente: nomeCliente,
-      nome_pet: nomePet,
+      nome_atendido: nomeAtendido,
       observacoes: observacoes || "",
       status: "confirmado",
       criado_em: this.relogio().toISOString(),
@@ -123,7 +123,7 @@ export class Agenda {
     const momentoAgora = `${agora.data} ${agora.hora}`;
     return this.agendamentos
       .filter((a) => a.telefone === telefone && a.status === "confirmado" && `${a.data} ${a.hora}` >= momentoAgora)
-      .map((a) => ({ id: a.id, servico: a.servico, dia: dataPorExtenso(a.data), data: a.data, hora: a.hora, nome_pet: a.nome_pet }));
+      .map((a) => ({ id: a.id, servico: a.servico, dia: dataPorExtenso(a.data), data: a.data, hora: a.hora, nome_atendido: a.nome_atendido }));
   }
 
   cancelar(telefone, id) {

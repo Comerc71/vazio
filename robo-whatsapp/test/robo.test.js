@@ -27,7 +27,7 @@ test("horários livres respeitam expediente e antecedência mínima", () => {
 
 test("capacidade: no máximo 2 pets ao mesmo tempo", () => {
   const agenda = new Agenda(negocio, pastaTemp(), relogio);
-  const base = { servicoId: "banho_p", data: "2026-11-11", hora: "10:00", nomeCliente: "Ana", nomePet: "Rex", observacoes: "" };
+  const base = { servicoId: "banho_p", data: "2026-11-11", hora: "10:00", nomeCliente: "Ana", nomeAtendido: "Rex", observacoes: "" };
   assert.ok(agenda.agendar({ ...base, telefone: "1" }).sucesso);
   assert.ok(agenda.agendar({ ...base, telefone: "2" }).sucesso);
   assert.match(agenda.agendar({ ...base, telefone: "3" }).erro, /não está disponível/);
@@ -38,7 +38,7 @@ test("capacidade: no máximo 2 pets ao mesmo tempo", () => {
 test("cliente só vê e cancela os próprios agendamentos", () => {
   const agenda = new Agenda(negocio, pastaTemp(), relogio);
   const { agendamento } = agenda.agendar({
-    telefone: "1", servicoId: "tosa_higienica", data: "2026-11-12", hora: "14:00", nomeCliente: "Ana", nomePet: "Mel", observacoes: "",
+    telefone: "1", servicoId: "tosa_higienica", data: "2026-11-12", hora: "14:00", nomeCliente: "Ana", nomeAtendido: "Mel", observacoes: "",
   });
   assert.equal(agenda.doCliente("1").length, 1);
   assert.equal(agenda.doCliente("2").length, 0);
@@ -89,7 +89,7 @@ test("atendente agenda usando ferramentas e guarda o histórico completo", async
       content: [
         { type: "thinking", thinking: "", signature: "sig" },
         { type: "tool_use", id: "t1", name: "agendar", input: {
-          servico_id: "banho_m", data: "2026-11-11", hora: "15:00", nome_cliente: "João", nome_pet: "Thor", observacoes: "",
+          servico_id: "banho_m", data: "2026-11-11", hora: "15:00", nome_cliente: "João", nome_atendido: "Thor", observacoes: "",
         } },
       ],
     },
@@ -144,4 +144,22 @@ test("recusa do modelo vira resposta educada e chama a equipe", async () => {
   });
   assert.match(await atendente.responder("559144", "..."), /alguém da equipe/);
   assert.equal(avisos.length, 1);
+});
+
+test("configuração odontológica: avaliação de 30 min, 1 paciente por vez, procedimentos sem agenda", async () => {
+  const { montarPromptSistema } = await import("../src/prompt.js");
+  const odonto = JSON.parse(fs.readFileSync(new URL("../config/odontologia.json", import.meta.url), "utf8"));
+  const agenda = new Agenda(odonto, pastaTemp(), relogio);
+  const base = { servicoId: "avaliacao", data: "2026-11-11", hora: "09:00", nomeCliente: "Ana", nomeAtendido: "Ana", observacoes: "" };
+  assert.ok(agenda.agendar({ ...base, telefone: "1" }).sucesso);
+  assert.match(agenda.agendar({ ...base, telefone: "2" }).erro, /não está disponível/);
+  assert.match(agenda.horariosLivres("2026-11-11", "canal").erro, /não precisa/);
+  // hoje às 09:00 com 2h de antecedência: primeiro horário 11:00
+  assert.equal(agenda.horariosLivres("2026-11-10", "avaliacao").horarios_livres[0], "11:00");
+
+  const prompt = montarPromptSistema(odonto);
+  assert.match(prompt, /Convênios aceitos:\n- Odontoprev/);
+  assert.match(prompt, /Não indique antibiótico/);
+  assert.doesNotMatch(prompt, /pet/i);
+  assert.match(montarPromptSistema(negocio), /Produtos:\n- Rações/);
 });
