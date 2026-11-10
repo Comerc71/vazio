@@ -1,0 +1,70 @@
+{
+  "nome": "Restaurante Exemplo",
+  "tipo": "um restaurante com almoço, pizzaria e delivery",
+  "cidade": "Paragominas - PA",
+  "endereco": "Rua Exemplo, 789 - Célio Miranda, Paragominas - PA",
+  "fuso_horario": "America/Belem",
+  "nome_atendente": "Bia",
+  "horario_funcionamento": {
+    "segunda": null,
+    "terca": ["11:00", "23:00"],
+    "quarta": ["11:00", "23:00"],
+    "quinta": ["11:00", "23:00"],
+    "sexta": ["11:00", "23:30"],
+    "sabado": ["11:00", "23:30"],
+    "domingo": ["11:00", "22:00"]
+  },
+  "atendimentos_simultaneos": 6,
+  "intervalo_agenda_minutos": 30,
+  "antecedencia_minima_minutos": 60,
+  "dias_para_frente": 30,
+  "servicos": [
+    { "id": "reserva_mesa", "nome": "Reserva de mesa (até 8 pessoas)", "preco": "sem custo", "duracao_minutos": 120, "agendavel": true },
+    { "id": "evento", "nome": "Reserva para aniversário ou evento (mais de 8 pessoas)", "preco": "sob consulta com a equipe", "duracao_minutos": 180, "agendavel": false }
+  ],
+  "pedidos": {
+    "aceita": true,
+    "taxa_entrega": "R$ 5,00 no Centro e Célio Miranda; R$ 8,00 nos demais bairros atendidos",
+    "area_entrega": "Centro, Célio Miranda, Promissão, Uraim, Cidade Nova, Jardim Atlântico e Angelim",
+    "tempo_medio": "40 a 60 minutos (sexta e sábado à noite pode passar de 1 hora)",
+    "pedido_minimo": "R$ 30,00 para entrega"
+  },
+  "formas_pagamento": ["Pix", "dinheiro", "cartão de débito", "cartão de crédito (na entrega, maquininha)"],
+  "regras": [
+    "Almoço servido das 11h às 15h; pizzas e lanches das 18h até o fechamento.",
+    "Reservas são mantidas por 15 minutos após o horário marcado.",
+    "Pedidos de delivery são confirmados pela equipe antes de sair para entrega."
+  ],
+  "secoes_extras": {
+    "Cardápio - almoço (11h às 15h)": [
+      "Prato do dia (arroz, feijão, salada, farofa e uma carne): R$ 22,00",
+      "Marmita P: R$ 18,00 | Marmita G: R$ 25,00",
+      "Self-service por quilo: R$ 59,90/kg",
+      "Peixe frito (filhote ou pescada) com acompanhamentos: R$ 38,00"
+    ],
+    "Cardápio - pizzas (a partir das 18h)": [
+      "Pizza média (6 fatias): R$ 45,00 | grande (8 fatias): R$ 59,00 | família (12 fatias): R$ 79,00",
+      "Sabores: calabresa, frango com catupiry, portuguesa, quatro queijos, marguerita, mista",
+      "Pizza meio a meio: cobra o sabor mais caro",
+      "Borda recheada: + R$ 8,00"
+    ],
+    "Cardápio - lanches": [
+      "X-burguer: R$ 18,00 | X-bacon: R$ 22,00 | X-tudo: R$ 28,00",
+      "Batata frita porção: R$ 20,00"
+    ],
+    "Bebidas": [
+      "Refrigerante lata: R$ 6,00 | 2 litros: R$ 14,00",
+      "Suco natural (cupuaçu, acerola, maracujá, goiaba) 500 ml: R$ 9,00",
+      "Água mineral: R$ 4,00"
+    ]
+  },
+  "informacoes_extras": "Temos espaço kids e estacionamento. Aceitamos encomendas de marmitas para empresas (falar com a equipe).",
+  "dados_para_agendar": "o dia, o horário, o número de pessoas e o nome de quem reserva",
+  "lembrar_apos_agendar": "que a mesa fica reservada por 15 minutos após o horário",
+  "cuidados": [
+    "Se o cliente falar de alergia ou restrição alimentar, anote no pedido e diga que a equipe vai confirmar se o prato é seguro. Nunca garanta que um prato não tem determinado ingrediente.",
+    "Reclamação de pedido (atraso, item errado, comida fria): peça desculpas, pergunte o código do pedido e chame um atendente.",
+    "Não ofereça desconto nem brinde por conta própria.",
+    "Reserva de mesa: use o campo de observações para o número de pessoas; acima de 8 pessoas, chame um atendente."
+  ]
+}

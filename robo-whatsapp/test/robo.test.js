@@ -163,3 +163,54 @@ test("configuração odontológica: avaliação de 30 min, 1 paciente por vez, p
   assert.doesNotMatch(prompt, /pet/i);
   assert.match(montarPromptSistema(negocio), /Produtos:\n- Rações/);
 });
+
+test("restaurante: ferramenta de pedido só aparece quando o negócio aceita pedidos, e o pedido chega à equipe", async () => {
+  const { formatarPedido } = await import("../src/pedidos.js");
+  const restaurante = JSON.parse(fs.readFileSync(new URL("../config/restaurante.json", import.meta.url), "utf8"));
+  const pasta = pastaTemp();
+  const recebidos = [];
+  const pedido = {
+    nome_cliente: "Carla",
+    itens: [{ produto: "Pizza grande calabresa", quantidade: 1, observacao: "sem cebola" }, { produto: "Refrigerante 2 litros", quantidade: 1, observacao: "" }],
+    modo: "entrega",
+    endereco: "Rua A, 10 - Uraim, perto da praça",
+    forma_pagamento: "dinheiro",
+    troco_para: "R$ 100,00",
+    total_estimado: "R$ 81,00",
+    observacoes: "",
+  };
+  const cliente = clienteFalso([
+    { stop_reason: "tool_use", content: [{ type: "tool_use", id: "t1", name: "enviar_pedido", input: pedido }] },
+    { stop_reason: "end_turn", content: [{ type: "text", text: "Pedido enviado!" }] },
+  ]);
+  const atendente = new Atendente({
+    negocio: restaurante, agenda: new Agenda(restaurante, pasta, relogio), pastaDados: pasta, cliente, relogio,
+    avisarEquipe: async () => {}, enviarPedido: async (p) => recebidos.push(p),
+  });
+
+  assert.equal(await atendente.responder("5591955556666", "pode mandar"), "Pedido enviado!");
+  assert.ok(cliente.requisicoes[0].tools.some((t) => t.name === "enviar_pedido"));
+  assert.match(cliente.requisicoes[0].system, /Taxa de entrega: R\$ 5,00/);
+  assert.equal(recebidos.length, 1);
+  assert.equal(recebidos[0].telefone, "5591955556666");
+  assert.match(formatarPedido(recebidos[0]), /1x Pizza grande calabresa \(sem cebola\)[\s\S]*troco para R\$ 100,00/);
+  const salvos = JSON.parse(fs.readFileSync(path.join(pasta, "pedidos.json"), "utf8"));
+  assert.equal(salvos.pedidos[0].codigo, recebidos[0].codigo);
+
+  // Pet shop não recebe pedidos: a ferramenta não é oferecida
+  const pastaPet = pastaTemp();
+  const clientePet = clienteFalso([{ stop_reason: "end_turn", content: [{ type: "text", text: "Oi!" }] }]);
+  const pet = new Atendente({ negocio, agenda: new Agenda(negocio, pastaPet, relogio), pastaDados: pastaPet, cliente: clientePet, relogio, avisarEquipe: async () => {} });
+  await pet.responder("1", "oi");
+  assert.ok(!clientePet.requisicoes[0].tools.some((t) => t.name === "enviar_pedido"));
+});
+
+test("enviar_pedido recusa entrega sem endereço", async () => {
+  const { executarFerramenta } = await import("../src/ferramentas.js");
+  const resultado = await executarFerramenta(
+    "enviar_pedido",
+    { nome_cliente: "A", itens: [{ produto: "X", quantidade: 1, observacao: "" }], modo: "entrega", endereco: " ", forma_pagamento: "Pix", troco_para: "", total_estimado: "R$ 1", observacoes: "" },
+    { telefone: "1", pedidos: { registrar: () => assert.fail("não deveria registrar") }, enviarPedido: async () => {} },
+  );
+  assert.match(resultado.erro, /endereço/);
+});

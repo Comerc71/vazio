@@ -1,5 +1,6 @@
 import http from "node:http";
 import { montarAtendente } from "./montar.js";
+import { formatarPedido } from "./pedidos.js";
 import { WhatsApp, assinaturaValida, extrairMensagens } from "./whatsapp.js";
 
 const obrigatorias = ["ANTHROPIC_API_KEY", "WHATSAPP_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_VERIFY_TOKEN"];
@@ -27,6 +28,10 @@ const { negocio, atendente } = montarAtendente({
       NUMERO_DONO,
       `🔔 *Cliente precisa de atendimento*\nWhatsApp: +${telefone}\nMotivo: ${motivo}\nResumo: ${resumo}\n\nO robô ficou pausado para esse cliente. Responda pelo WhatsApp da loja.\nPara o robô voltar a atender: #retomar ${telefone}`,
     );
+  },
+  enviarPedido: async (pedido) => {
+    console.log(`[pedido] ${pedido.codigo} de ${pedido.telefone}`);
+    if (NUMERO_DONO) await whatsapp.enviarTexto(NUMERO_DONO, formatarPedido(pedido));
   },
 });
 

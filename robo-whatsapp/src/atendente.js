@@ -1,7 +1,8 @@
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { ArquivoJson } from "./armazenamento.js";
-import { executarFerramenta, FERRAMENTAS } from "./ferramentas.js";
+import { executarFerramenta, ferramentasDoNegocio } from "./ferramentas.js";
+import { Pedidos } from "./pedidos.js";
 import { montarPromptSistema } from "./prompt.js";
 import { agoraLocal, dataPorExtenso } from "./tempo.js";
 
@@ -25,13 +26,17 @@ export class Atendente {
    * @param {import("./agenda.js").Agenda} opcoes.agenda
    * @param {string} opcoes.pastaDados
    * @param {(aviso: {telefone: string, motivo: string, resumo: string}) => Promise<void>} opcoes.avisarEquipe
+   * @param {(pedido: object) => Promise<void>} [opcoes.enviarPedido] recebe cada pedido confirmado (delivery/retirada)
    * @param {Anthropic} [opcoes.cliente]
    * @param {string} [opcoes.modelo]
    */
-  constructor({ negocio, agenda, pastaDados, avisarEquipe, cliente, modelo, relogio = () => new Date() }) {
+  constructor({ negocio, agenda, pastaDados, avisarEquipe, enviarPedido, cliente, modelo, relogio = () => new Date() }) {
     this.negocio = negocio;
     this.agenda = agenda;
     this.avisarEquipe = avisarEquipe;
+    this.enviarPedido = enviarPedido ?? (async () => {});
+    this.ferramentas = ferramentasDoNegocio(negocio);
+    this.pedidos = negocio.pedidos?.aceita ? new Pedidos(pastaDados, relogio) : null;
     this.cliente = cliente ?? new Anthropic();
     this.modelo = modelo ?? process.env.CLAUDE_MODEL ?? "claude-opus-5-5";
     this.relogio = relogio;
@@ -135,7 +140,7 @@ export class Atendente {
         output_config: { effort: "low" },
         cache_control: { type: "ephemeral" },
         system: this.promptSistema,
-        tools: FERRAMENTAS,
+        tools: this.ferramentas,
         messages: mensagens,
       });
 
@@ -156,6 +161,8 @@ export class Atendente {
           resultado = await executarFerramenta(bloco.name, bloco.input, {
             telefone,
             agenda: this.agenda,
+            pedidos: this.pedidos,
+            enviarPedido: (pedido) => this.#repassarPedido(pedido),
             chamarAtendente: (motivo, resumo) => this.#chamarHumano(telefone, motivo, resumo),
           });
           deuErro = Boolean(resultado?.erro);
@@ -175,6 +182,15 @@ export class Atendente {
       mensagens.push({ role: "user", content: resultados });
     }
     throw new Error("O atendente usou ferramentas demais sem terminar a resposta.");
+  }
+
+  async #repassarPedido(pedido) {
+    try {
+      await this.enviarPedido(pedido);
+    } catch (erro) {
+      // O pedido já está salvo em data/pedidos.json; registra a falha para a equipe conferir.
+      console.error(`[atendente] não consegui avisar a equipe do pedido ${pedido.codigo}:`, erro);
+    }
   }
 
   async #chamarHumano(telefone, motivo, resumo) {

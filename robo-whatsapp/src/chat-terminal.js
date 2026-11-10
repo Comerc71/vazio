@@ -5,6 +5,7 @@
 import path from "node:path";
 import readline from "node:readline/promises";
 import { montarAtendente } from "./montar.js";
+import { formatarPedido } from "./pedidos.js";
 
 const arquivo = process.argv[2];
 if (arquivo) {
@@ -21,6 +22,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const TELEFONE_TESTE = "5591900000000";
 const { negocio, atendente } = montarAtendente({
   avisarEquipe: async ({ motivo, resumo }) => console.log(`\n🔔 [aviso para a equipe] ${motivo} | ${resumo}\n`),
+  enviarPedido: async (pedido) => console.log(`\n[pedido enviado para a equipe]\n${formatarPedido(pedido)}\n`),
 });
 
 const terminal = readline.createInterface({ input: process.stdin, output: process.stdout });

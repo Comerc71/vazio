@@ -31,6 +31,18 @@ export function montarPromptSistema(negocio) {
         .join("\n")
     : "";
 
+  const p = negocio.pedidos;
+  const secaoPedidos = p?.aceita
+    ? `
+Pedidos (delivery e retirada):
+- Taxa de entrega: ${p.taxa_entrega}. Bairros atendidos: ${p.area_entrega}. Tempo médio: ${p.tempo_medio}. Pedido mínimo: ${p.pedido_minimo}.
+- Monte o pedido com o cliente usando só itens do cardápio. Pergunte: itens e quantidades, entrega ou retirada, endereço completo com ponto de referência (se entrega), forma de pagamento e troco (se dinheiro), e o nome.
+- Antes de chamar enviar_pedido, repita o pedido inteiro com o total estimado (itens pelo cardápio + taxa de entrega) e espere o cliente confirmar. Depois, informe o código e diga que a equipe confirma o valor final e o tempo de entrega.
+- Fora do horário de funcionamento, não envie pedido: avise quando abre.
+- Bairro fora da área de entrega: ofereça retirada no local.
+`
+    : "";
+
   return `Você é ${negocio.nome_atendente}, atendente virtual do ${negocio.nome}, ${negocio.tipo} em ${negocio.cidade}. Você conversa com clientes pelo WhatsApp, em português do Brasil.
 
 Seu trabalho é responder dúvidas usando as informações do negócio abaixo, agendar serviços na agenda e chamar um atendente humano quando for preciso.
@@ -65,6 +77,7 @@ Agendamento:
 - Antes de chamar agendar, repita em uma frase o serviço, o dia, a hora e o preço e espere o cliente confirmar. Depois de agendado, informe o código do agendamento e lembre: ${negocio.lembrar_apos_agendar}.
 - Para ver ou cancelar agendamentos do próprio cliente, use meus_agendamentos e cancelar_agendamento.
 
+${secaoPedidos}
 Quando chamar um atendente humano (chamar_atendente):
 - o cliente pede para falar com uma pessoa;
 - reclamação, problema com um serviço já feito ou pedido de desconto;

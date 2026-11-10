@@ -1,10 +1,11 @@
 # Robô de atendimento no WhatsApp (IA)
 
-Atendente virtual para **pet shops**, **clínicas odontológicas** e outros negócios locais. Ele responde os clientes no WhatsApp 24 horas e:
+Atendente virtual para **pet shops**, **clínicas odontológicas**, **restaurantes** e outros negócios locais. Ele responde os clientes no WhatsApp 24 horas e:
 
 - tira dúvidas de **preços, horários, endereço e regras** usando só as informações que você cadastrar;
 - **agenda serviços** (banho, tosa etc.) numa agenda própria, sem marcar dois pets no mesmo horário além da capacidade da loja;
 - mostra e **cancela agendamentos** do próprio cliente;
+- **recebe pedidos de delivery ou retirada** (restaurantes): monta o pedido pelo cardápio, calcula a taxa de entrega e manda o pedido organizado para o WhatsApp do dono;
 - **chama um humano** em reclamações, pedidos especiais, dúvidas sem resposta e emergências: manda um aviso no WhatsApp do dono e fica em silêncio com aquele cliente;
 - avisa com educação quando recebe áudio ou foto (por enquanto lê só texto).
 
@@ -29,6 +30,7 @@ Há dois exemplos prontos:
 |---|---|---|
 | `npm run chat` | Pet shop | [`config/negocio.json`](config/negocio.json) |
 | `npm run chat:odonto` | Clínica odontológica (convênios, urgência, avaliação antes de orçamento) | [`config/odontologia.json`](config/odontologia.json) |
+| `npm run chat:restaurante` | Restaurante com cardápio, delivery e reserva de mesa | [`config/restaurante.json`](config/restaurante.json) |
 | `npm run chat -- config/seu-cliente.json` | Qualquer outro arquivo que você criar | |
 
 ## 2. Configurar para um cliente
@@ -50,6 +52,7 @@ Copie um dos exemplos (ex.: `config/odontologia.json` para `config/clinica-fulan
 | `dados_para_agendar` | O que o robô precisa perguntar antes de agendar |
 | `lembrar_apos_agendar` | O que ele lembra ao cliente depois de agendar |
 | `cuidados` | Regras específicas do ramo: urgências, o que nunca dizer, dados sensíveis |
+| `pedidos` | Só para quem recebe pedidos: `aceita`, `taxa_entrega`, `area_entrega`, `tempo_medio`, `pedido_minimo`. O cardápio vai em `secoes_extras` |
 
 Serve para outros negócios também (salão, barbearia, oficina): é só trocar os serviços, as regras, os `cuidados` e o `tipo`. No servidor, escolha o arquivo com `NEGOCIO_ARQUIVO` no `.env`. Para atender vários clientes, rode um robô por cliente, cada um com o seu `.env`.
 
@@ -102,7 +105,8 @@ Os agendamentos e as conversas ficam em `data/` (arquivos JSON). Em hospedagens 
 | [`src/servidor.js`](src/servidor.js) | Webhook do WhatsApp: valida a assinatura, evita respostas duplicadas, comandos do dono |
 | [`src/atendente.js`](src/atendente.js) | Conversa com o Claude, laço de ferramentas, histórico por cliente, pausa/humano |
 | [`src/prompt.js`](src/prompt.js) | Instruções do atendente, montadas a partir de `negocio.json` |
-| [`src/ferramentas.js`](src/ferramentas.js) | Ferramentas: horários livres, agendar, meus agendamentos, cancelar, chamar atendente |
+| [`src/ferramentas.js`](src/ferramentas.js) | Ferramentas: horários livres, agendar, meus agendamentos, cancelar, chamar atendente, enviar pedido |
+| [`src/pedidos.js`](src/pedidos.js) | Guarda os pedidos em `data/pedidos.json` e formata o aviso para a equipe |
 | [`src/agenda.js`](src/agenda.js) | Regras da agenda: expediente, capacidade, antecedência |
 | [`src/whatsapp.js`](src/whatsapp.js) | Envio de mensagens e leitura do webhook da Cloud API |
 | [`src/chat-terminal.js`](src/chat-terminal.js) | Conversa pelo terminal para testes e demonstração |
